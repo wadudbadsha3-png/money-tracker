@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Transaction from '@/lib/models/Transaction';
-import { CreateTransactionInput, ApiResponse } from '@/lib/types';
+import { ApiResponse } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +19,11 @@ export async function GET(request: NextRequest) {
       query.type = type;
     }
 
+    // ✅ Optimized Query
     const transactions = await Transaction.find(query)
-      .sort({ date: -1 }); // নতুন থেকে পুরানো
+      .sort({ date: -1 })
+      .limit(500)           // ← প্রথম ৫০০টা লোড করবে (পরে pagination যোগ করবো)
+      .lean();              // ← অনেক ফাস্ট করে (plain JS object)
 
     return NextResponse.json<ApiResponse<typeof transactions>>({
       success: true,
@@ -35,13 +38,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST অংশটা একই রাখলাম (শুধু ছোট উন্নতি)
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
-    const body: CreateTransactionInput = await request.json();
+    const body = await request.json();
 
     if (!body.amount || !body.type || !body.category || !body.date || !body.description) {
-      return NextResponse.json<ApiResponse<null>>(
+      return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
@@ -55,13 +59,13 @@ export async function POST(request: NextRequest) {
       description: body.description,
     });
 
-    return NextResponse.json<ApiResponse<typeof transaction>>(
+    return NextResponse.json(
       { success: true, data: transaction },
       { status: 201 }
     );
   } catch (error: any) {
     console.error('POST Transaction Error:', error);
-    return NextResponse.json<ApiResponse<null>>(
+    return NextResponse.json(
       { success: false, error: 'Failed to create transaction' },
       { status: 500 }
     );

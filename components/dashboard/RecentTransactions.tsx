@@ -28,24 +28,36 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
         {recent.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No transactions yet</p>
         ) : (
-          recent.map(transaction => (
-            <div key={transaction.id} className="flex items-center justify-between py-3 border-b last:border-0">
-              <div className="flex-1">
-                <p className="font-medium text-sm">{transaction.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-muted-foreground">{transaction.category}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(transaction.date)}</span>
+          recent.map((transaction, index) => {
+            // ✅ নিরাপদ ও ইউনিক key
+            const uniqueKey = transaction._id 
+              ? String(transaction._id) 
+              : transaction.id 
+                ? String(transaction.id) 
+                : `recent-tx-${Date.now()}-${index}`;
+
+            return (
+              <div 
+                key={uniqueKey}
+                className="flex items-center justify-between py-3 border-b last:border-0"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{transaction.description}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">{transaction.category}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(transaction.date)}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-semibold text-sm ${
+                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className={`font-semibold text-sm ${
-                  transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                </p>
-              </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
     </Card>

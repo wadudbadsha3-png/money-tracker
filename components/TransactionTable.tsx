@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,50 +27,61 @@ export function TransactionTable({
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc')
 
-  let filtered = [...transactions]
+  // Debug log (warning খুঁজতে সাহায্য করবে)
+  console.log('TransactionTable received transactions count:', transactions.length)
+  console.log('Sample transaction IDs:', transactions.slice(0, 3).map(t => t.id))
 
-  // Filter by search term
-  if (searchTerm) {
-    filtered = filtered.filter(t =>
-      t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }
+  // ✅ Filtered & Sorted data with useMemo
+  const filteredAndSorted = useMemo(() => {
+    let filtered = [...transactions]
 
-  // Filter by type
-  if (filterType !== 'all') {
-    filtered = filtered.filter(t => t.type === filterType)
-  }
-
-  // Filter by category
-  if (filterCategory !== 'all') {
-    filtered = filtered.filter(t => t.category === filterCategory)
-  }
-
-  // Sort
-  filtered.sort((a, b) => {
-    switch (sortBy) {
-      case 'date-desc':
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
-      case 'date-asc':
-        return new Date(a.date).getTime() - new Date(b.date).getTime()
-      case 'amount-desc':
-        return b.amount - a.amount
-      case 'amount-asc':
-        return a.amount - b.amount
-      default:
-        return 0
+    // Search by description or category
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(t =>
+        t.description.toLowerCase().includes(term) ||
+        t.category.toLowerCase().includes(term)
+      )
     }
-  })
+
+    // Filter by type (income/expense)
+    if (filterType !== 'all') {
+      filtered = filtered.filter(t => t.type === filterType)
+    }
+
+    // Filter by category
+    if (filterCategory !== 'all') {
+      filtered = filtered.filter(t => t.category === filterCategory)
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'date-desc':
+          return new Date(b.date).getTime() - new Date(a.date).getTime()
+        case 'date-asc':
+          return new Date(a.date).getTime() - new Date(b.date).getTime()
+        case 'amount-desc':
+          return b.amount - a.amount
+        case 'amount-asc':
+          return a.amount - b.amount
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }, [transactions, searchTerm, filterType, filterCategory, sortBy])
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
-      try {
-        await deleteTransaction(id)
-        onDelete?.()
-      } catch (error) {
-        console.error('Failed to delete transaction:', error)
-      }
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return
+
+    try {
+      await deleteTransaction(id)
+      onDelete?.()
+    } catch (error) {
+      console.error('Failed to delete transaction:', error)
+      alert('Failed to delete the transaction!')
     }
   }
 
@@ -87,7 +98,7 @@ export function TransactionTable({
 
           <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
@@ -98,7 +109,7 @@ export function TransactionTable({
 
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
@@ -112,7 +123,7 @@ export function TransactionTable({
 
           <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="date-desc">Newest First</SelectItem>
@@ -137,61 +148,81 @@ export function TransactionTable({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {filteredAndSorted.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                <td colSpan={5} className="text-center py-12 text-muted-foreground">
                   No transactions found
                 </td>
               </tr>
             ) : (
-              filtered.map((transaction) => (
-                <tr key={transaction.id} className="border-b hover:bg-muted/50 transition-colors">
-                  <td className="py-3 px-4 text-sm">{formatDate(transaction.date)}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{transaction.description}</td>
-                  <td className="py-3 px-4 text-sm">
-                    {categories.find(c => c.name === transaction.category)?.icon} {transaction.category}
-                  </td>
-                  <td className={`py-3 px-4 text-sm font-semibold text-right ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-right space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(transaction)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(transaction.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))
+              filteredAndSorted.map((transaction, index) => {
+                // ✅ Safe & Unique Key (এটাই মূল ফিক্স)
+                const uniqueKey = transaction.id 
+                  ? String(transaction.id) 
+                  : `fallback-${Date.now()}-${index}`;
+
+                return (
+                  <tr
+                    key={uniqueKey}
+                    className="border-b hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-sm">{formatDate(transaction.date)}</td>
+                    <td className="py-3 px-4 text-sm font-medium">{transaction.description}</td>
+                    <td className="py-3 px-4 text-sm">
+                      {categories.find(c => c.name === transaction.category)?.icon} {transaction.category}
+                    </td>
+                    <td className={`py-3 px-4 text-sm font-semibold text-right ${
+                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                    </td>
+                    <td className="py-3 px-4 text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(transaction)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(transaction.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
       </div>
 
       {/* Summary */}
-      {filtered.length > 0 && (
+      {filteredAndSorted.length > 0 && (
         <div className="flex justify-between items-center mt-6 pt-4 border-t text-sm">
-          <p className="text-muted-foreground">Showing {filtered.length} transaction(s)</p>
-          <div className="space-x-4">
+          <p className="text-muted-foreground">
+            Showing {filteredAndSorted.length} transaction(s)
+          </p>
+          <div className="space-x-6">
             <span>
               Income: <span className="font-semibold text-green-600">
-                {formatCurrency(filtered.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0))}
+                {formatCurrency(
+                  filteredAndSorted
+                    .filter(t => t.type === 'income')
+                    .reduce((sum, t) => sum + t.amount, 0)
+                )}
               </span>
             </span>
             <span>
               Expense: <span className="font-semibold text-red-600">
-                {formatCurrency(filtered.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0))}
+                {formatCurrency(
+                  filteredAndSorted
+                    .filter(t => t.type === 'expense')
+                    .reduce((sum, t) => sum + t.amount, 0)
+                )}
               </span>
             </span>
           </div>
