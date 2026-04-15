@@ -1,63 +1,66 @@
+// components/dashboard/RecentTransactions.tsx
 'use client'
 
-import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { formatCurrency, formatDate } from '@/lib/utils'
 import { Transaction } from '@/lib/types'
+import { formatCurrency } from '@/lib/utils'
+import Link from 'next/link'
 
 interface RecentTransactionsProps {
   transactions: Transaction[]
 }
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
-  const recent = transactions.slice(0, 10)
+  // Get last 5 transactions
+  const recentTransactions = [...transactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Recent Transactions</h2>
-        <Link href="/transactions">
-          <Button variant="outline" size="sm">
-            View All
-          </Button>
+    <Card className="p-3 sm:p-4">
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="text-base sm:text-lg font-semibold">Recent Transactions</h2>
+        <Link href="/transactions" className="text-xs sm:text-sm text-primary hover:underline">
+          View All →
         </Link>
       </div>
-
-      <div className="space-y-3">
-        {recent.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No transactions yet</p>
+      
+      <div className="space-y-2">
+        {recentTransactions.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            No transactions yet. Add your first transaction!
+          </p>
         ) : (
-          recent.map((transaction, index) => {
-            // ✅ নিরাপদ ও ইউনিক key
-            const uniqueKey = transaction._id 
-              ? String(transaction._id) 
-              : transaction.id 
-                ? String(transaction.id) 
-                : `recent-tx-${Date.now()}-${index}`;
-
-            return (
-              <div 
-                key={uniqueKey}
-                className="flex items-center justify-between py-3 border-b last:border-0"
-              >
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{transaction.description}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">{transaction.category}</span>
-                    <span className="text-xs text-muted-foreground">{formatDate(transaction.date)}</span>
-                  </div>
+          recentTransactions.map((transaction, index) => (
+            // ✅ key হিসেবে id না থাকলে index ব্যবহার করছে
+            <div 
+              key={transaction.id || `transaction-${index}`}
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base ${
+                  transaction.type === 'income' 
+                    ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' 
+                    : 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
+                }`}>
+                  {transaction.type === 'income' ? '💰' : '💸'}
                 </div>
-                <div className="text-right">
-                  <p className={`font-semibold text-sm ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                <div>
+                  <p className="text-sm sm:text-base font-medium">
+                    {transaction.description || transaction.category}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    {transaction.category} • {new Date(transaction.date).toLocaleDateString()}
                   </p>
                 </div>
               </div>
-            )
-          })
+              <p className={`text-sm sm:text-base font-semibold ${
+                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+              </p>
+            </div>
+          ))
         )}
       </div>
     </Card>

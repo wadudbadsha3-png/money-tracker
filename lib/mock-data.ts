@@ -41,7 +41,35 @@ export const mockCategories: Category[] = [
     id: '6',
     name: 'Salary',
     icon: '💼',
-    color: '#4CAF50',
+    color: '#47b84b',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '7',
+    name: 'House Rent',
+    icon: '🏠',
+    color: '#A8E6CF',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '8',
+    name: 'Lend',
+    icon: '💸',
+    color: '#FFD3B6',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '9',
+    name: 'Return',
+    icon: '🔄',
+    color: '#FFAAA5',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '10',
+    name: 'Others',
+    icon: '📦',
+    color: '#C7CEE6',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -156,6 +184,43 @@ export const mockTransactions: Transaction[] = [
     description: 'Concert tickets',
     createdAt: new Date().toISOString(),
   },
+  // নতুন ট্রানজ্যাকশন উদাহরণ (নতুন ক্যাটাগরি ব্যবহার করে)
+  {
+    id: '13',
+    amount: 15000,
+    type: 'expense',
+    category: 'House Rent',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 5).toISOString().split('T')[0],
+    description: 'Monthly house rent',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '14',
+    amount: 3000,
+    type: 'expense',
+    category: 'Lend',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 10).toISOString().split('T')[0],
+    description: 'Lent money to friend',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '15',
+    amount: 3000,
+    type: 'income',
+    category: 'Return',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 20).toISOString().split('T')[0],
+    description: 'Friend returned money',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '16',
+    amount: 500,
+    type: 'expense',
+    category: 'Others',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 15).toISOString().split('T')[0],
+    description: 'Miscellaneous expenses',
+    createdAt: new Date().toISOString(),
+  },
 ]
 
 // Mock budgets
@@ -189,6 +254,22 @@ export const mockBudgets: Budget[] = [
     categoryId: '4',
     categoryName: 'Shopping',
     limit: 600,
+    period: 'monthly',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    categoryId: '7',
+    categoryName: 'House Rent',
+    limit: 20000,
+    period: 'monthly',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '6',
+    categoryId: '10',
+    categoryName: 'Others',
+    limit: 1000,
     period: 'monthly',
     createdAt: new Date().toISOString(),
   },
@@ -294,4 +375,11 @@ export function deleteBudget(id: string): boolean {
   if (index === -1) return false
   budgets.splice(index, 1)
   return true
+}
+
+// Reset to mock data (useful for testing)
+export function resetToMockData(): void {
+  transactions = [...mockTransactions]
+  categories = [...mockCategories]
+  budgets = [...mockBudgets]
 }
