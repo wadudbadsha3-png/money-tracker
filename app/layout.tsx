@@ -4,8 +4,15 @@ import { Analytics } from '@vercel/analytics/next'
 import { Navigation } from '@/components/Navigation'
 import './globals.css'
 
-const geist = Geist({ subsets: ["latin"] });
-const geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ 
+  subsets: ["latin"],
+  variable: '--font-geist-sans',
+})
+
+const geistMono = Geist_Mono({ 
+  subsets: ["latin"],
+  variable: '--font-geist-mono',
+})
 
 export const metadata: Metadata = {
   title: 'Money Tracker - Smart Personal Finance Management',
@@ -45,7 +52,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.className} ${geistMono.className} font-sans antialiased`}>
+      <body 
+        className={`${geist.variable} ${geistMono.variable} font-sans antialiased`} 
+        suppressHydrationWarning
+      >
         <Navigation />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

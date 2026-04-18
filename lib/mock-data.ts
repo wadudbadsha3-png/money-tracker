@@ -72,6 +72,27 @@ export const mockCategories: Category[] = [
     color: '#C7CEE6',
     createdAt: new Date().toISOString(),
   },
+  {
+    id: '11',
+    name: 'Loan',
+    icon: '💰',
+    color: '#FF9800',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '12',
+    name: 'Donate',
+    icon: '🎁',
+    color: '#4CAF50',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '13',
+    name: 'Savings',
+    icon: '🏦',
+    color: '#2196F3',
+    createdAt: new Date().toISOString(),
+  },
 ]
 
 // Mock transactions
@@ -184,7 +205,6 @@ export const mockTransactions: Transaction[] = [
     description: 'Concert tickets',
     createdAt: new Date().toISOString(),
   },
-  // নতুন ট্রানজ্যাকশন উদাহরণ (নতুন ক্যাটাগরি ব্যবহার করে)
   {
     id: '13',
     amount: 15000,
@@ -219,6 +239,34 @@ export const mockTransactions: Transaction[] = [
     category: 'Others',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 15).toISOString().split('T')[0],
     description: 'Miscellaneous expenses',
+    createdAt: new Date().toISOString(),
+  },
+  // নতুন ক্যাটাগরির জন্য ট্রানজ্যাকশন
+  {
+    id: '17',
+    amount: 10000,
+    type: 'expense',
+    category: 'Loan',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 8).toISOString().split('T')[0],
+    description: 'Monthly loan payment',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '18',
+    amount: 500,
+    type: 'expense',
+    category: 'Donate',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 12).toISOString().split('T')[0],
+    description: 'Charity donation',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '19',
+    amount: 5000,
+    type: 'income',
+    category: 'Savings',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 25).toISOString().split('T')[0],
+    description: 'Savings deposit',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -273,6 +321,30 @@ export const mockBudgets: Budget[] = [
     period: 'monthly',
     createdAt: new Date().toISOString(),
   },
+  {
+    id: '7',
+    categoryId: '11',
+    categoryName: 'Loan',
+    limit: 15000,
+    period: 'monthly',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '8',
+    categoryId: '12',
+    categoryName: 'Donate',
+    limit: 1000,
+    period: 'monthly',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '9',
+    categoryId: '13',
+    categoryName: 'Savings',
+    limit: 10000,
+    period: 'monthly',
+    createdAt: new Date().toISOString(),
+  },
 ]
 
 // In-memory storage (will be replaced with database)
@@ -322,6 +394,12 @@ export function getCategoryById(id: string): Category | undefined {
 }
 
 export function addCategory(category: Omit<Category, 'id' | 'createdAt'>): Category {
+  // ডুপ্লিকেট ক্যাটাগরি চেক করুন
+  const exists = categories.some(c => c.name.toLowerCase() === category.name.toLowerCase())
+  if (exists) {
+    throw new Error(`Category "${category.name}" already exists`)
+  }
+  
   const newCategory: Category = {
     ...category,
     id: Date.now().toString(),

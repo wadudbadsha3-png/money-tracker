@@ -1,5 +1,9 @@
 // lib/mongodb.ts
 import mongoose from 'mongoose';
+import dns from 'node:dns';
+
+// DNS সমস্যা সমাধানের জন্য (Atlas SRV lookup এর জন্য খুব জরুরি)
+dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 

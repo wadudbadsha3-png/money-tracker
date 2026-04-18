@@ -57,3 +57,45 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Optional: Add a route to pre-populate categories
+export async function PUT(request: NextRequest) {
+  try {
+    const defaultCategories = [
+      { name: 'Loan', icon: '💰', color: '#FF9800' },
+      { name: 'Donate', icon: '🎁', color: '#4CAF50' },
+      { name: 'Savings', icon: '🏦', color: '#2196F3' }
+    ];
+
+    const addedCategories = [];
+    
+    for (const cat of defaultCategories) {
+      const existingCategories = getAllCategories();
+      const exists = existingCategories.some(
+        existing => existing.name.toLowerCase() === cat.name.toLowerCase()
+      );
+      
+      if (!exists) {
+        const newCategory = addCategory(cat);
+        addedCategories.push(newCategory);
+      }
+    }
+
+    return NextResponse.json<ApiResponse<typeof addedCategories>>(
+      {
+        success: true,
+        data: addedCategories,
+        message: `${addedCategories.length} categories added successfully`
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json<ApiResponse<null>>(
+      {
+        success: false,
+        error: 'Failed to add default categories',
+      },
+      { status: 500 }
+    );
+  }
+}
