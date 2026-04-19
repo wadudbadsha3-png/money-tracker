@@ -1,5 +1,7 @@
-// Transaction types
-export type TransactionType = 'income' | 'expense';
+// lib/types.ts
+
+// Transaction types - Transfer যোগ করুন
+export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
   id: string;
@@ -9,6 +11,8 @@ export interface Transaction {
   category: string;
   date: string; // ISO date string
   description: string;
+  fromAccount?: string;   // ট্রান্সফারের জন্য
+  toAccount?: string;     // ট্রান্সফারের জন্য
   createdAt: string;
   updatedAt?: string;
 }
@@ -19,6 +23,8 @@ export interface CreateTransactionInput {
   category: string;
   date: string;
   description: string;
+  fromAccount?: string;   // ট্রান্সফারের জন্য
+  toAccount?: string;     // ট্রান্সফারের জন্য
 }
 
 export interface UpdateTransactionInput {
@@ -27,6 +33,8 @@ export interface UpdateTransactionInput {
   category?: string;
   date?: string;
   description?: string;
+  fromAccount?: string;
+  toAccount?: string;
 }
 
 // Category types
@@ -71,6 +79,28 @@ export interface UpdateBudgetInput {
   period?: BudgetPeriod;
 }
 
+// Asset/Wealth types (নতুন যোগ করুন)
+export interface AssetSummary {
+  totalIncome: number;
+  totalExpense: number;
+  totalSavings: number;
+  netLoansGiven: number;
+  bankBalance: number;
+  savingsBalance: number;
+  loansGiven: number;
+  loansReturned: number;
+  totalAsset: number;
+}
+
+export interface Account {
+  id: string;
+  name: string;  // 'Main Account', 'Savings Account', 'Cash'
+  type: 'checking' | 'savings' | 'cash' | 'investment';
+  balance: number;
+  currency: string;
+  createdAt: string;
+}
+
 // Summary/Dashboard types
 export interface DashboardSummary {
   totalIncome: number;
@@ -80,6 +110,7 @@ export interface DashboardSummary {
   thisMonthExpenses: number;
   recentTransactions: Transaction[];
   topCategories: { category: string; amount: number }[];
+  assetSummary: AssetSummary;  // নতুন যোগ করুন
 }
 
 // Report types
