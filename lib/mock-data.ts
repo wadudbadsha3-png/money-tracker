@@ -1,4 +1,13 @@
-import { Transaction, Category, Budget } from './types'
+// lib/mockData.ts
+
+import { 
+  Transaction, 
+  Category, 
+  Budget, 
+  CreateTransactionInput,
+  LendSummary,
+  SavingsSummary
+} from './types'
 
 // Mock categories
 export const mockCategories: Category[] = [
@@ -67,9 +76,9 @@ export const mockCategories: Category[] = [
   },
   {
     id: '10',
-    name: 'Others',
-    icon: '📦',
-    color: '#C7CEE6',
+    name: 'Savings Withdraw',
+    icon: '🏧',
+    color: '#FF5722',
     createdAt: new Date().toISOString(),
   },
   {
@@ -91,6 +100,13 @@ export const mockCategories: Category[] = [
     name: 'Savings',
     icon: '🏦',
     color: '#2196F3',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '14',
+    name: 'Others',
+    icon: '📦',
+    color: '#C7CEE6',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -130,7 +146,7 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Entertainment',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 7).toISOString().split('T')[0],
-    description: 'Movie tickets and popcorn',
+    description: 'Movie tickets',
     createdAt: new Date().toISOString(),
   },
   {
@@ -184,7 +200,7 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Shopping',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 20).toISOString().split('T')[0],
-    description: 'Shoes and accessories',
+    description: 'Shoes',
     createdAt: new Date().toISOString(),
   },
   {
@@ -193,7 +209,7 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Food',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 22).toISOString().split('T')[0],
-    description: 'Coffee and brunch',
+    description: 'Coffee',
     createdAt: new Date().toISOString(),
   },
   {
@@ -202,7 +218,7 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Entertainment',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 25).toISOString().split('T')[0],
-    description: 'Concert tickets',
+    description: 'Concert',
     createdAt: new Date().toISOString(),
   },
   {
@@ -211,7 +227,7 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'House Rent',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 5).toISOString().split('T')[0],
-    description: 'Monthly house rent',
+    description: 'Monthly rent',
     createdAt: new Date().toISOString(),
   },
   {
@@ -220,16 +236,18 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Lend',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 10).toISOString().split('T')[0],
-    description: 'Lent money to friend',
+    description: 'Lent to friend',
+    personName: 'Rahim',
     createdAt: new Date().toISOString(),
   },
   {
     id: '15',
     amount: 3000,
-    type: 'income',
+    type: 'expense',
     category: 'Return',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 20).toISOString().split('T')[0],
-    description: 'Friend returned money',
+    description: 'Friend returned',
+    personName: 'Rahim',
     createdAt: new Date().toISOString(),
   },
   {
@@ -238,17 +256,16 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Others',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 15).toISOString().split('T')[0],
-    description: 'Miscellaneous expenses',
+    description: 'Misc',
     createdAt: new Date().toISOString(),
   },
-  // নতুন ক্যাটাগরির জন্য ট্রানজ্যাকশন
   {
     id: '17',
     amount: 10000,
     type: 'expense',
     category: 'Loan',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 8).toISOString().split('T')[0],
-    description: 'Monthly loan payment',
+    description: 'Loan payment',
     createdAt: new Date().toISOString(),
   },
   {
@@ -257,16 +274,27 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Donate',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 12).toISOString().split('T')[0],
-    description: 'Charity donation',
+    description: 'Charity',
     createdAt: new Date().toISOString(),
   },
   {
     id: '19',
     amount: 5000,
-    type: 'income',
+    type: 'expense',
     category: 'Savings',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 25).toISOString().split('T')[0],
     description: 'Savings deposit',
+    accountName: 'DBBL',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '20',
+    amount: 2000,
+    type: 'expense',
+    category: 'Savings Withdraw',
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 28).toISOString().split('T')[0],
+    description: 'Emergency withdraw',
+    accountName: 'DBBL',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -315,7 +343,7 @@ export const mockBudgets: Budget[] = [
   },
   {
     id: '6',
-    categoryId: '10',
+    categoryId: '14',
     categoryName: 'Others',
     limit: 1000,
     period: 'monthly',
@@ -347,12 +375,15 @@ export const mockBudgets: Budget[] = [
   },
 ]
 
-// In-memory storage (will be replaced with database)
+// In-memory storage
 let transactions = [...mockTransactions]
 let categories = [...mockCategories]
 let budgets = [...mockBudgets]
 
-// Helper functions to manage data
+// =============================================
+// TRANSACTION FUNCTIONS
+// =============================================
+
 export function getAllTransactions(): Transaction[] {
   return [...transactions]
 }
@@ -361,12 +392,20 @@ export function getTransactionById(id: string): Transaction | undefined {
   return transactions.find(t => t.id === id)
 }
 
-export function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Transaction {
+export function addTransaction(input: CreateTransactionInput): Transaction {
   const newTransaction: Transaction = {
-    ...transaction,
     id: Date.now().toString(),
+    userId: undefined,
+    amount: input.amount,
+    type: input.type,
+    category: input.category,
+    date: input.date,
+    description: input.description,
     createdAt: new Date().toISOString(),
+    personName: input.personName,
+    accountName: input.accountName,
   }
+  
   transactions.push(newTransaction)
   return newTransaction
 }
@@ -385,6 +424,117 @@ export function deleteTransaction(id: string): boolean {
   return true
 }
 
+// =============================================
+// LEND SUMMARY FUNCTIONS
+// =============================================
+
+export function getLendSummary(): LendSummary[] {
+  const summary = new Map<string, { given: number, returned: number }>()
+  
+  for (const t of transactions) {
+    if (t.category === 'Lend' && t.type === 'expense' && t.personName) {
+      const current = summary.get(t.personName) || { given: 0, returned: 0 }
+      current.given += t.amount
+      summary.set(t.personName, current)
+    }
+    
+    if (t.category === 'Return' && t.type === 'expense' && t.personName) {
+      const current = summary.get(t.personName) || { given: 0, returned: 0 }
+      current.returned += t.amount
+      summary.set(t.personName, current)
+    }
+  }
+  
+  return Array.from(summary.entries()).map(([personName, data]) => ({
+    personName,
+    totalGiven: data.given,
+    totalReturned: data.returned,
+    pending: data.given - data.returned
+  }))
+}
+
+export function getPendingLends(): Transaction[] {
+  const allLends = transactions.filter(t => t.category === 'Lend' && t.type === 'expense')
+  const returns = transactions.filter(t => t.category === 'Return' && t.type === 'expense')
+  
+  // Simple pending calculation
+  return allLends.filter(lend => {
+    const totalReturned = returns
+      .filter(r => r.personName === lend.personName)
+      .reduce((sum, r) => sum + r.amount, 0)
+    return lend.amount > totalReturned
+  })
+}
+
+// =============================================
+// SAVINGS SUMMARY FUNCTIONS
+// =============================================
+
+export function getSavingsSummary(): SavingsSummary[] {
+  const summary = new Map<string, { deposit: number, withdraw: number }>()
+  
+  for (const t of transactions) {
+    if (t.category === 'Savings' && t.type === 'expense' && t.accountName) {
+      const current = summary.get(t.accountName) || { deposit: 0, withdraw: 0 }
+      current.deposit += t.amount
+      summary.set(t.accountName, current)
+    }
+    
+    if (t.category === 'Savings Withdraw' && t.type === 'expense' && t.accountName) {
+      const current = summary.get(t.accountName) || { deposit: 0, withdraw: 0 }
+      current.withdraw += t.amount
+      summary.set(t.accountName, current)
+    }
+  }
+  
+  return Array.from(summary.entries()).map(([accountName, data]) => ({
+    accountName,
+    totalDeposit: data.deposit,
+    totalWithdraw: data.withdraw,
+    balance: data.deposit - data.withdraw
+  }))
+}
+
+export function getTotalSavingsBalance(): number {
+  const summaries = getSavingsSummary()
+  return summaries.reduce((total, s) => total + s.balance, 0)
+}
+
+// =============================================
+// BALANCE FUNCTIONS
+// =============================================
+
+export function getBalance(): number {
+  let totalIncome = 0
+  let totalExpense = 0
+  
+  for (const t of transactions) {
+    if (t.type === 'income') {
+      totalIncome += t.amount
+    } else if (t.type === 'expense') {
+      totalExpense += t.amount
+    }
+  }
+  
+  return totalIncome - totalExpense
+}
+
+export function getTotalIncome(): number {
+  return transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0)
+}
+
+export function getTotalExpense(): number {
+  return transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0)
+}
+
+// =============================================
+// CATEGORY FUNCTIONS
+// =============================================
+
 export function getAllCategories(): Category[] {
   return [...categories]
 }
@@ -393,16 +543,17 @@ export function getCategoryById(id: string): Category | undefined {
   return categories.find(c => c.id === id)
 }
 
-export function addCategory(category: Omit<Category, 'id' | 'createdAt'>): Category {
-  // ডুপ্লিকেট ক্যাটাগরি চেক করুন
-  const exists = categories.some(c => c.name.toLowerCase() === category.name.toLowerCase())
+export function addCategory(name: string, icon: string, color: string): Category {
+  const exists = categories.some(c => c.name.toLowerCase() === name.toLowerCase())
   if (exists) {
-    throw new Error(`Category "${category.name}" already exists`)
+    throw new Error(`Category "${name}" already exists`)
   }
   
   const newCategory: Category = {
-    ...category,
     id: Date.now().toString(),
+    name,
+    icon,
+    color,
     createdAt: new Date().toISOString(),
   }
   categories.push(newCategory)
@@ -423,6 +574,10 @@ export function deleteCategory(id: string): boolean {
   return true
 }
 
+// =============================================
+// BUDGET FUNCTIONS
+// =============================================
+
 export function getAllBudgets(): Budget[] {
   return [...budgets]
 }
@@ -431,10 +586,18 @@ export function getBudgetById(id: string): Budget | undefined {
   return budgets.find(b => b.id === id)
 }
 
-export function addBudget(budget: Omit<Budget, 'id' | 'createdAt'>): Budget {
+export function addBudget(categoryId: string, limit: number, period: 'monthly' | 'yearly'): Budget {
+  const category = getCategoryById(categoryId)
+  if (!category) {
+    throw new Error('Category not found')
+  }
+  
   const newBudget: Budget = {
-    ...budget,
     id: Date.now().toString(),
+    categoryId,
+    categoryName: category.name,
+    limit,
+    period,
     createdAt: new Date().toISOString(),
   }
   budgets.push(newBudget)
@@ -455,7 +618,7 @@ export function deleteBudget(id: string): boolean {
   return true
 }
 
-// Reset to mock data (useful for testing)
+// Reset to mock data
 export function resetToMockData(): void {
   transactions = [...mockTransactions]
   categories = [...mockCategories]

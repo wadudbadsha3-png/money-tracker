@@ -16,11 +16,11 @@ interface CategoryChartProps {
 }
 
 export function CategoryChart({ transactions, categories }: CategoryChartProps) {
-  // Group expenses by category
+  // Group expenses by category (Return এবং Savings Withdraw বাদ দিয়ে)
   const categoryData: Record<string, number> = {}
 
   transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
     .forEach(tx => {
       if (!categoryData[tx.category]) {
         categoryData[tx.category] = 0
@@ -37,6 +37,15 @@ export function CategoryChart({ transactions, categories }: CategoryChartProps) 
     acc[cat.name] = cat.color
     return acc
   }, {} as Record<string, string>)
+
+  // যদি কোন ডাটা না থাকে
+  if (data.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No expense data available
+      </div>
+    )
+  }
 
   return (
     <ResponsiveContainer width="100%" height={300}>

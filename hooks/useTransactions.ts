@@ -1,3 +1,5 @@
+// hooks/useTransactions.ts
+
 'use client'
 
 import useSWR from 'swr'
@@ -14,25 +16,23 @@ export function useTransactions() {
     '/api/transactions', 
     fetcher,
     {
-      // Performance improvements
-      revalidateOnFocus: false,        // ট্যাব চেঞ্জ করলে আবার fetch করবে না
+      revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateIfStale: false,        // stale data থাকলেও auto refetch করবে না
-      dedupingInterval: 10000,         // ১০ সেকেন্ডের মধ্যে একই রিকোয়েস্ট duplicate হবে না
-      refreshInterval: 0,              // auto polling বন্ধ
-      keepPreviousData: true,          // পুরানো ডাটা দেখিয়ে নতুন লোড করবে (UX ভালো)
+      revalidateIfStale: false,
+      dedupingInterval: 10000,
+      refreshInterval: 0,
+      keepPreviousData: true,
     }
   )
 
   return {
     transactions: data?.data || [],
     error,
-    isLoading: isLoading || !data,   // প্রথম লোডে সঠিক লোডিং দেখাবে
+    isLoading: isLoading || !data,
     mutate,
   }
 }
 
-// অন্যান্য ফাংশনগুলো একই রাখলাম
 export function useTransaction(id: string) {
   const { data, error, isLoading } = useSWR<ApiResponse<Transaction>>(
     id ? `/api/transactions/${id}` : null,
@@ -52,33 +52,66 @@ export async function createTransaction(data: {
   category: string
   date: string
   description: string
+  personName?: string
+  accountName?: string
 }) {
+  console.log('📤 createTransaction called with:', data)
+  
   const response = await fetch('/api/transactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
 
-  if (!response.ok) throw new Error('Failed to create transaction')
-  return response.json()
+  const responseData = await response.json()
+  console.log('📥 createTransaction response:', responseData)
+
+  if (!response.ok) {
+    throw new Error(responseData.error || 'Failed to create transaction')
+  }
+  
+  return responseData
 }
 
+// =============================================
+// ✅ UPDATE TRANSACTION - URL ঠিক করা হয়েছে
+// =============================================
 export async function updateTransaction(id: string, data: Partial<Transaction>) {
-  const response = await fetch(`/api/transactions/${id}`, {
+  console.log('✏️ updateTransaction called with id:', id);
+  console.log('📦 updateTransaction data:', data);
+  
+  const response = await fetch(`/api/transactions?id=${id}`, {  // ← এটা ঠিক করুন
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
 
-  if (!response.ok) throw new Error('Failed to update transaction')
-  return response.json()
+  const responseData = await response.json()
+  console.log('📥 updateTransaction response:', responseData)
+
+  if (!response.ok) {
+    throw new Error(responseData.error || 'Failed to update transaction')
+  }
+  
+  return responseData
 }
 
+// =============================================
+// ✅ DELETE TRANSACTION - URL ঠিক করা হয়েছে
+// =============================================
 export async function deleteTransaction(id: string) {
-  const response = await fetch(`/api/transactions/${id}`, {
+  console.log('🗑️ deleteTransaction called with id:', id);
+  
+  const response = await fetch(`/api/transactions?id=${id}`, {  // ← এটা ঠিক করুন
     method: 'DELETE',
   })
 
-  if (!response.ok) throw new Error('Failed to delete transaction')
-  return response.json()
+  const responseData = await response.json()
+  console.log('📥 deleteTransaction response:', responseData)
+
+  if (!response.ok) {
+    throw new Error(responseData.error || 'Failed to delete transaction')
+  }
+  
+  return responseData
 }

@@ -1,41 +1,56 @@
-// components/dashboard/SummaryCards.tsx (আইকন সহ ভার্সন)
+// components/dashboard/SummaryCards.tsx
 'use client'
 
 import { Card } from '@/components/ui/card'
 import { Transaction } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Wallet, Calendar, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle, Briefcase } from 'lucide-react'
 
 interface SummaryCardsProps {
   transactions: Transaction[]
 }
 
 export function SummaryCards({ transactions }: SummaryCardsProps) {
-  // Calculate totals
+  // মোট আয়
   const totalIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0)
     
+  // মোট খরচ (Return এবং Savings Withdraw বাদ দিয়ে)
   const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
     .reduce((sum, t) => sum + t.amount, 0)
     
+  // ব্যালেন্স
   const balance = totalIncome - totalExpenses
 
-  // Current month stats
+  // 🔥 সরাসরি Lend (Return বিয়োগ করবেন না)
+  const totalLend = transactions
+    .filter(t => t.category === 'Lend')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  // 🔥 সরাসরি Savings (Withdraw বিয়োগ করবেন না)
+  const totalSavings = transactions
+    .filter(t => t.category === 'Savings')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  // 🎯 Total Asset = Balance + Lend + Savings
+  const totalAsset = balance + totalLend + totalSavings
+
+  // বর্তমান মাসের পরিসংখ্যান
   const currentMonth = new Date().toISOString().slice(0, 7)
   const thisMonthTransactions = transactions.filter(t => t.date.startsWith(currentMonth))
   const thisMonthIncome = thisMonthTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0)
   const thisMonthExpenses = thisMonthTransactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
     .reduce((sum, t) => sum + t.amount, 0)
 
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Main Stats Cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         
         {/* Total Income */}
         <Card className="p-2 sm:p-3 md:p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200 dark:border-green-800">
@@ -78,7 +93,21 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
           }`}>
             {formatCurrency(balance)}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-1">All time</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Cash in hand</p>
+        </Card>
+
+        {/* Total Asset */}
+        <Card className="p-2 sm:p-3 md:p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border-purple-200 dark:border-purple-800">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Total Asset</p>
+            <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />
+          </div>
+          <p className="text-sm sm:text-base md:text-xl font-bold text-purple-600 dark:text-purple-400 truncate">
+            {formatCurrency(totalAsset)}
+          </p>
+          <p className="text-[10px] text-purple-500 dark:text-purple-400 mt-1">
+            Balance + Lend + Savings
+          </p>
         </Card>
       </div>
 

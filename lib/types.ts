@@ -1,3 +1,5 @@
+// lib/types.ts
+
 // Transaction types
 export type TransactionType = 'income' | 'expense';
 
@@ -11,6 +13,12 @@ export interface Transaction {
   description: string;
   createdAt: string;
   updatedAt?: string;
+  
+  // 🆕 লেন্ড/রিটার্ন ট্র্যাকিং
+  personName?: string;      // লেন্ড/রিটার্নের ব্যক্তির নাম
+  
+  // 🆕 সেভিংস ট্র্যাকিং
+  accountName?: string;     // ব্যাংক/সেভিংস অ্যাকাউন্টের নাম
 }
 
 export interface CreateTransactionInput {
@@ -19,6 +27,8 @@ export interface CreateTransactionInput {
   category: string;
   date: string;
   description: string;
+  personName?: string;      // 🆕
+  accountName?: string;     // 🆕
 }
 
 export interface UpdateTransactionInput {
@@ -27,15 +37,17 @@ export interface UpdateTransactionInput {
   category?: string;
   date?: string;
   description?: string;
+  personName?: string;      // 🆕
+  accountName?: string;     // 🆕
 }
 
-// Category types
+// Category types (same as before)
 export interface Category {
   id: string;
   userId?: string;
   name: string;
-  icon: string; // emoji or icon name
-  color: string; // hex color or color name
+  icon: string;
+  color: string;
   createdAt: string;
 }
 
@@ -84,7 +96,7 @@ export interface DashboardSummary {
 
 // Report types
 export interface MonthlyReport {
-  month: string; // YYYY-MM format
+  month: string;
   income: number;
   expenses: number;
   balance: number;
@@ -114,4 +126,20 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   error?: string;
+}
+
+// 🆕 লেন্ড সামারি টাইপ
+export interface LendSummary {
+  personName: string;
+  totalGiven: number;
+  totalReturned: number;
+  pending: number;
+}
+
+// 🆕 সেভিংস সামারি টাইপ
+export interface SavingsSummary {
+  accountName: string;
+  totalDeposit: number;
+  totalWithdraw: number;
+  balance: number;
 }
