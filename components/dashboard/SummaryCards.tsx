@@ -1,13 +1,27 @@
+<<<<<<< HEAD
 // components/dashboard/SummaryCards.tsx
+=======
+// components/dashboard/SummaryCards.tsx (আইকন সহ ভার্সন - .00 বাদ)
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 'use client'
 
 import { Card } from '@/components/ui/card'
 import { Transaction } from '@/lib/types'
+<<<<<<< HEAD
 import { formatCurrency } from '@/lib/utils'
 import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle, Briefcase } from 'lucide-react'
+=======
+import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 
 interface SummaryCardsProps {
   transactions: Transaction[]
+}
+
+// নতুন ফাংশন - .00 ছাড়া কারেন্সি ফরম্যাট
+const formatCurrencyNoDecimal = (amount: number) => {
+  const roundedAmount = Math.floor(amount)
+  return `$${roundedAmount.toLocaleString()}`
 }
 
 export function SummaryCards({ transactions }: SummaryCardsProps) {
@@ -59,7 +73,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-sm sm:text-base md:text-xl font-bold text-green-600 dark:text-green-400 truncate">
-            {formatCurrency(totalIncome)}
+            {formatCurrencyNoDecimal(totalIncome)}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">All time</p>
         </Card>
@@ -71,7 +85,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
           </div>
           <p className="text-sm sm:text-base md:text-xl font-bold text-red-600 dark:text-red-400 truncate">
-            {formatCurrency(totalExpenses)}
+            {formatCurrencyNoDecimal(totalExpenses)}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">All time</p>
         </Card>
@@ -91,7 +105,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
               ? 'text-blue-600 dark:text-blue-400' 
               : 'text-orange-600 dark:text-orange-400'
           }`}>
-            {formatCurrency(balance)}
+            {formatCurrencyNoDecimal(balance)}
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">Cash in hand</p>
         </Card>
@@ -122,7 +136,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             <ArrowUpCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-sm sm:text-base md:text-lg font-bold text-green-600 dark:text-green-400">
-            {formatCurrency(thisMonthIncome)}
+            {formatCurrencyNoDecimal(thisMonthIncome)}
           </p>
         </Card>
 
@@ -134,7 +148,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             <ArrowDownCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
           </div>
           <p className="text-sm sm:text-base md:text-lg font-bold text-red-600 dark:text-red-400">
-            {formatCurrency(thisMonthExpenses)}
+            {formatCurrencyNoDecimal(thisMonthExpenses)}
           </p>
         </Card>
       </div>

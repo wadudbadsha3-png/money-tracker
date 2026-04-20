@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // lib/mockData.ts
 
 import { 
@@ -8,6 +9,10 @@ import {
   LendSummary,
   SavingsSummary
 } from './types'
+=======
+// lib/mock-data.ts
+import { Transaction, Category, Budget, AssetSummary } from './types'
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 
 // Mock categories
 export const mockCategories: Category[] = [
@@ -265,7 +270,11 @@ export const mockTransactions: Transaction[] = [
     type: 'expense',
     category: 'Loan',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 8).toISOString().split('T')[0],
+<<<<<<< HEAD
     description: 'Loan payment',
+=======
+    description: 'Monthly loan payment (EMI)',
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
     createdAt: new Date().toISOString(),
   },
   {
@@ -280,21 +289,39 @@ export const mockTransactions: Transaction[] = [
   {
     id: '19',
     amount: 5000,
+<<<<<<< HEAD
     type: 'expense',
+=======
+    type: 'transfer',
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
     category: 'Savings',
+    fromAccount: 'Main Account',
+    toAccount: 'Savings Account',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 25).toISOString().split('T')[0],
+<<<<<<< HEAD
     description: 'Savings deposit',
     accountName: 'DBBL',
+=======
+    description: 'Monthly savings transfer',
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
     createdAt: new Date().toISOString(),
   },
   {
     id: '20',
+<<<<<<< HEAD
     amount: 2000,
     type: 'expense',
     category: 'Savings Withdraw',
     date: new Date(new Date().getFullYear(), new Date().getMonth(), 28).toISOString().split('T')[0],
     description: 'Emergency withdraw',
     accountName: 'DBBL',
+=======
+    amount: 500000,
+    type: 'income',
+    category: 'Loan',
+    date: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().split('T')[0],
+    description: 'Car loan received from bank',
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
     createdAt: new Date().toISOString(),
   },
 ]
@@ -380,10 +407,52 @@ let transactions = [...mockTransactions]
 let categories = [...mockCategories]
 let budgets = [...mockBudgets]
 
+<<<<<<< HEAD
 // =============================================
 // TRANSACTION FUNCTIONS
 // =============================================
 
+=======
+// ============= CATEGORY FUNCTIONS =============
+export function getAllCategories(): Category[] {
+  return [...categories]
+}
+
+export function getCategoryById(id: string): Category | undefined {
+  return categories.find(c => c.id === id)
+}
+
+export function addCategory(category: Omit<Category, 'id' | 'createdAt'>): Category {
+  const exists = categories.some(c => c.name.toLowerCase() === category.name.toLowerCase())
+  if (exists) {
+    throw new Error(`Category "${category.name}" already exists`)
+  }
+  
+  const newCategory: Category = {
+    ...category,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+  }
+  categories.push(newCategory)
+  return newCategory
+}
+
+export function updateCategory(id: string, updates: Partial<Category>): Category | undefined {
+  const index = categories.findIndex(c => c.id === id)
+  if (index === -1) return undefined
+  categories[index] = { ...categories[index], ...updates }
+  return categories[index]
+}
+
+export function deleteCategory(id: string): boolean {
+  const index = categories.findIndex(c => c.id === id)
+  if (index === -1) return false
+  categories.splice(index, 1)
+  return true
+}
+
+// ============= TRANSACTION FUNCTIONS =============
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 export function getAllTransactions(): Transaction[] {
   return [...transactions]
 }
@@ -424,6 +493,7 @@ export function deleteTransaction(id: string): boolean {
   return true
 }
 
+<<<<<<< HEAD
 // =============================================
 // LEND SUMMARY FUNCTIONS
 // =============================================
@@ -578,6 +648,9 @@ export function deleteCategory(id: string): boolean {
 // BUDGET FUNCTIONS
 // =============================================
 
+=======
+// ============= BUDGET FUNCTIONS =============
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 export function getAllBudgets(): Budget[] {
   return [...budgets]
 }
@@ -618,7 +691,58 @@ export function deleteBudget(id: string): boolean {
   return true
 }
 
+<<<<<<< HEAD
 // Reset to mock data
+=======
+// ============= ASSET CALCULATOR =============
+export function calculateAssetSummary(): AssetSummary {
+  let totalIncome = 0
+  let totalExpense = 0
+  let totalSavings = 0
+  let loansGiven = 0
+  let loansReturned = 0
+  
+  for (const transaction of transactions) {
+    if (transaction.type === 'income' && transaction.category !== 'Loan') {
+      totalIncome += transaction.amount
+    }
+    else if (transaction.type === 'expense') {
+      if (transaction.category !== 'Savings') {
+        totalExpense += transaction.amount
+      }
+      if (transaction.category === 'Lend') {
+        loansGiven += transaction.amount
+      }
+    }
+    else if (transaction.type === 'transfer' && transaction.category === 'Savings') {
+      totalSavings += transaction.amount
+    }
+    
+    if (transaction.category === 'Return' && transaction.type === 'income') {
+      loansReturned += transaction.amount
+    }
+  }
+  
+  const netLoansGiven = loansGiven - loansReturned
+  const bankBalance = totalIncome - totalExpense - totalSavings - loansGiven
+  const savingsBalance = totalSavings
+  const totalAsset = bankBalance + savingsBalance + netLoansGiven
+  
+  return {
+    totalIncome,
+    totalExpense,
+    totalSavings,
+    netLoansGiven,
+    bankBalance,
+    savingsBalance,
+    loansGiven,
+    loansReturned,
+    totalAsset
+  }
+}
+
+// ============= RESET FUNCTION =============
+>>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 export function resetToMockData(): void {
   transactions = [...mockTransactions]
   categories = [...mockCategories]
