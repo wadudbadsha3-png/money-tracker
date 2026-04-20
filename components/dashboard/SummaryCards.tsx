@@ -1,18 +1,10 @@
-<<<<<<< HEAD
-// components/dashboard/SummaryCards.tsx
-=======
 // components/dashboard/SummaryCards.tsx (আইকন সহ ভার্সন - .00 বাদ)
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 'use client'
 
 import { Card } from '@/components/ui/card'
 import { Transaction } from '@/lib/types'
-<<<<<<< HEAD
 import { formatCurrency } from '@/lib/utils'
-import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle, Briefcase } from 'lucide-react'
-=======
-import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
+import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle, Briefcase, HandCoins, PiggyBank } from 'lucide-react'
 
 interface SummaryCardsProps {
   transactions: Transaction[]
@@ -63,7 +55,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Main Stats Cards */}
+      {/* Main Stats Cards - 4 cards in first row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         
         {/* Total Income */}
@@ -121,6 +113,38 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
           </p>
           <p className="text-[10px] text-purple-500 dark:text-purple-400 mt-1">
             Balance + Lend + Savings
+          </p>
+        </Card>
+      </div>
+
+      {/* Lend and Savings Cards - Second row */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+        
+        {/* Total Lend Card */}
+        <Card className="p-2 sm:p-3 md:p-4 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-900/50 border-orange-200 dark:border-orange-800">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Total Lend</p>
+            <HandCoins className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
+          </div>
+          <p className="text-sm sm:text-base md:text-xl font-bold text-orange-600 dark:text-orange-400 truncate">
+            {formatCurrencyNoDecimal(totalLend)}
+          </p>
+          <p className="text-[10px] text-orange-500 dark:text-orange-400 mt-1">
+            To be returned
+          </p>
+        </Card>
+
+        {/* Total Savings Card */}
+        <Card className="p-2 sm:p-3 md:p-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-900/50 border-emerald-200 dark:border-emerald-800">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Total Savings</p>
+            <PiggyBank className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <p className="text-sm sm:text-base md:text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">
+            {formatCurrencyNoDecimal(totalSavings)}
+          </p>
+          <p className="text-[10px] text-emerald-500 dark:text-emerald-400 mt-1">
+            Saved amount
           </p>
         </Card>
       </div>

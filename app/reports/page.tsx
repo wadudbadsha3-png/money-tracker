@@ -1,4 +1,5 @@
-// app/reports/page.tsx
+// app/reports/page.tsx - শুধু Category Summary অংশ আপডেট করা হয়েছে
+
 'use client'
 
 import { Card } from '@/components/ui/card'
@@ -198,29 +199,47 @@ export default function ReportsPage() {
             )}
           </Card>
 
-          {/* Category Breakdown Table */}
+          {/* Category Breakdown Table - UPDATED VERSION */}
           <Card className="p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
               Category Summary
             </h2>
             <div className="space-y-2 sm:space-y-3 max-h-80 overflow-y-auto">
-              {categories.map(category => {
-                const amount = transactions
-                  .filter(t => t.category === category.name && t.type === 'expense')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                if (amount === 0) return null
-                return (
-                  <div key={category.id} className="flex items-center justify-between pb-2 border-b last:border-0">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <span className="text-sm sm:text-base">{category.icon}</span>
-                      <span className="text-xs sm:text-sm font-medium">{category.name}</span>
+              {(() => {
+                // ট্রানজেকশন থেকে expense ক্যাটাগরি এবং amount বের করি
+                const expenseByCategory = transactions
+                  .filter(t => t.type === 'expense')
+                  .reduce((acc, t) => {
+                    acc[t.category] = (acc[t.category] || 0) + t.amount
+                    return acc
+                  }, {} as Record<string, number>)
+                
+                const categoryEntries = Object.entries(expenseByCategory)
+                
+                if (categoryEntries.length === 0) {
+                  return (
+                    <p className="text-center text-muted-foreground py-4">
+                      No expense data available
+                    </p>
+                  )
+                }
+                
+                return categoryEntries.map(([categoryName, amount]) => {
+                  // ক্যাটাগরির আইকন খুঁজে বের করি
+                  const category = categories.find(c => c.name === categoryName)
+                  return (
+                    <div key={categoryName} className="flex items-center justify-between pb-2 border-b last:border-0">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-sm sm:text-base">{category?.icon || '📝'}</span>
+                        <span className="text-xs sm:text-sm font-medium">{categoryName}</span>
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-foreground">
+                        {formatCurrency(amount)}
+                      </span>
                     </div>
-                    <span className="text-xs sm:text-sm font-semibold text-foreground">
-                      {formatCurrency(amount)}
-                    </span>
-                  </div>
-                )
-              })}
+                  )
+                })
+              })()}
             </div>
           </Card>
         </div>

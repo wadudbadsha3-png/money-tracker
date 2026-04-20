@@ -30,12 +30,6 @@ export async function GET(request: NextRequest) {
       if (endDate) query.date.$lte = new Date(endDate);
     }
 
-<<<<<<< HEAD
-    const transactions = await Transaction.find(query)
-      .sort({ date: -1 })
-      .limit(500)
-      .lean();
-=======
     // ✅ Optimized Query with Pagination
     const skip = (page - 1) * limit;
     const transactions = await Transaction.find(query)
@@ -45,7 +39,6 @@ export async function GET(request: NextRequest) {
       .lean();
 
     const total = await Transaction.countDocuments(query);
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 
     return NextResponse.json({
       success: true,
@@ -66,10 +59,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-<<<<<<< HEAD
-=======
 // ✅ আপডেটেড POST - Transfer সাপোর্ট সহ
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
@@ -77,54 +67,46 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 Received payload:', body);
 
-<<<<<<< HEAD
-    const { amount, type, category, date, description, personName, accountName } = body;
-
-    if (!amount || !date) {
-      console.log('❌ Missing fields:', { amount, date });
-=======
     // বেসিক ভ্যালিডেশন
     if (!body.amount || !body.type || !body.category || !body.date || !body.description) {
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
       return NextResponse.json(
         { success: false, error: 'Missing required fields: amount and date are required' },
         { status: 400 }
       );
     }
 
-<<<<<<< HEAD
     // LEND
-    if (category === 'Lend') {
+    if (body.category === 'Lend') {
       const transaction = await Transaction.create({
-        amount: parseFloat(amount),
+        amount: parseFloat(body.amount),
         type: 'expense',
         category: 'Lend',
-        date: new Date(date),
-        description: description || '',
-        personName: personName || null,
+        date: new Date(body.date),
+        description: body.description || '',
+        personName: body.personName || null,
       });
       console.log('✅ Lend created:', transaction);
       return NextResponse.json({ success: true, data: transaction }, { status: 201 });
     }
 
     // RETURN
-    if (category === 'Return') {
+    if (body.category === 'Return') {
       const pendingLends = await Transaction.find({
         category: 'Lend',
         type: 'expense',
-        personName: personName,
+        personName: body.personName,
       }).sort({ date: 1 });
 
-      console.log(`🔍 Found ${pendingLends.length} pending lends for ${personName}`);
+      console.log(`🔍 Found ${pendingLends.length} pending lends for ${body.personName}`);
 
       if (pendingLends.length === 0) {
         return NextResponse.json(
-          { success: false, error: `No pending lend found for ${personName}` },
+          { success: false, error: `No pending lend found for ${body.personName}` },
           { status: 400 }
         );
       }
 
-      let returnAmount = parseFloat(amount);
+      let returnAmount = parseFloat(body.amount);
       let remainingReturn = returnAmount;
 
       for (const lend of pendingLends) {
@@ -149,9 +131,9 @@ export async function POST(request: NextRequest) {
         amount: returnAmount,
         type: 'expense',
         category: 'Return',
-        date: new Date(date),
-        description: description || '',
-        personName: personName,
+        date: new Date(body.date),
+        description: body.description || '',
+        personName: body.personName,
       });
 
       console.log('✅ Return created:', returnRecord);
@@ -159,37 +141,37 @@ export async function POST(request: NextRequest) {
     }
 
     // SAVINGS
-    if (category === 'Savings') {
+    if (body.category === 'Savings') {
       const transaction = await Transaction.create({
-        amount: parseFloat(amount),
+        amount: parseFloat(body.amount),
         type: 'expense',
         category: 'Savings',
-        date: new Date(date),
-        description: description || '',
-        accountName: accountName || null,
+        date: new Date(body.date),
+        description: body.description || '',
+        accountName: body.accountName || null,
       });
       console.log('✅ Savings created:', transaction);
       return NextResponse.json({ success: true, data: transaction }, { status: 201 });
     }
 
     // SAVINGS WITHDRAW
-    if (category === 'Savings Withdraw') {
+    if (body.category === 'Savings Withdraw') {
       const savingsEntries = await Transaction.find({
         category: 'Savings',
         type: 'expense',
-        accountName: accountName,
+        accountName: body.accountName,
       }).sort({ date: 1 });
 
-      console.log(`🔍 Found ${savingsEntries.length} savings entries for ${accountName}`);
+      console.log(`🔍 Found ${savingsEntries.length} savings entries for ${body.accountName}`);
 
       if (savingsEntries.length === 0) {
         return NextResponse.json(
-          { success: false, error: `No savings found for ${accountName}` },
+          { success: false, error: `No savings found for ${body.accountName}` },
           { status: 400 }
         );
       }
 
-      let withdrawAmount = parseFloat(amount);
+      let withdrawAmount = parseFloat(body.amount);
       let remainingWithdraw = withdrawAmount;
 
       for (const savings of savingsEntries) {
@@ -214,24 +196,15 @@ export async function POST(request: NextRequest) {
         amount: withdrawAmount,
         type: 'expense',
         category: 'Savings Withdraw',
-        date: new Date(date),
-        description: description || '',
-        accountName: accountName,
+        date: new Date(body.date),
+        description: body.description || '',
+        accountName: body.accountName,
       });
 
       console.log('✅ Withdraw created:', withdrawRecord);
       return NextResponse.json({ success: true, data: withdrawRecord }, { status: 201 });
     }
 
-    // NORMAL INCOME/EXPENSE
-    const transaction = await Transaction.create({
-      amount: parseFloat(amount),
-      type: type,
-      category: category,
-      date: new Date(date),
-      description: description || '',
-    });
-=======
     // ট্রান্সফারের জন্য অতিরিক্ত ভ্যালিডেশন
     if (body.type === 'transfer') {
       if (!body.fromAccount || !body.toAccount) {
@@ -270,7 +243,6 @@ export async function POST(request: NextRequest) {
     }
 
     const transaction = await Transaction.create(transactionData);
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 
     console.log('✅ Normal transaction created:', transaction);
     return NextResponse.json(
@@ -462,165 +434,6 @@ export async function DELETE(request: NextRequest) {
     console.error('❌ DELETE Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete transaction' },
-      { status: 500 }
-    );
-  }
-}
-
-// ✅ PUT রাউট - ট্রানজ্যাকশন আপডেটের জন্য
-export async function PUT(request: NextRequest) {
-  try {
-    await dbConnect();
-    const { searchParams } = request.nextUrl;
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Transaction ID required' },
-        { status: 400 }
-      );
-    }
-
-    const body = await request.json();
-    
-    // ট্রান্সফার টাইপ চেঞ্জ করলে ভ্যালিডেশন
-    if (body.type === 'transfer' && (!body.fromAccount || !body.toAccount)) {
-      return NextResponse.json(
-        { success: false, error: 'Transfer requires fromAccount and toAccount' },
-        { status: 400 }
-      );
-    }
-
-    const updateData: any = { ...body };
-    if (body.date) updateData.date = new Date(body.date);
-    updateData.updatedAt = new Date();
-
-    const transaction = await Transaction.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!transaction) {
-      return NextResponse.json(
-        { success: false, error: 'Transaction not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: true, data: transaction },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('PUT Transaction Error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update transaction' },
-      { status: 500 }
-    );
-  }
-}
-
-// ✅ DELETE রাউট - ট্রানজ্যাকশন ডিলিটের জন্য
-export async function DELETE(request: NextRequest) {
-  try {
-    await dbConnect();
-    const { searchParams } = request.nextUrl;
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Transaction ID required' },
-        { status: 400 }
-      );
-    }
-
-    const transaction = await Transaction.findByIdAndDelete(id);
-
-    if (!transaction) {
-      return NextResponse.json(
-        { success: false, error: 'Transaction not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: true, message: 'Transaction deleted successfully' },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    console.error('DELETE Transaction Error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete transaction' },
-      { status: 500 }
-    );
-  }
-}
-
-// 🆕 অ্যাসেট সামারি API
-export async function HEAD(request: NextRequest) {
-  try {
-    await dbConnect();
-    
-    // সব ট্রানজ্যাকশন
-    const transactions = await Transaction.find({}).lean();
-    
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let totalSavings = 0;
-    let loansGiven = 0;
-    let loansReturned = 0;
-    
-    for (const transaction of transactions) {
-      // ইনকাম ট্র্যাকিং (লোন বাদে)
-      if (transaction.type === 'income' && transaction.category !== 'Loan') {
-        totalIncome += transaction.amount;
-      }
-      
-      // এক্সপেন্স ট্র্যাকিং (সেভিংস ও লেন্ড বাদে)
-      if (transaction.type === 'expense') {
-        if (transaction.category !== 'Savings') {
-          totalExpense += transaction.amount;
-        }
-        if (transaction.category === 'Lend') {
-          loansGiven += transaction.amount;
-        }
-      }
-      
-      // ট্রান্সফার ট্র্যাকিং (সেভিংস)
-      if (transaction.type === 'transfer' && transaction.category === 'Savings') {
-        totalSavings += transaction.amount;
-      }
-      
-      // রিটার্ন ট্র্যাকিং
-      if (transaction.category === 'Return' && transaction.type === 'income') {
-        loansReturned += transaction.amount;
-      }
-    }
-    
-    const netLoansGiven = loansGiven - loansReturned;
-    const bankBalance = totalIncome - totalExpense - totalSavings - loansGiven;
-    const savingsBalance = totalSavings;
-    const totalAsset = bankBalance + savingsBalance + netLoansGiven;
-    
-    return NextResponse.json({
-      success: true,
-      data: {
-        totalIncome,
-        totalExpense,
-        totalSavings,
-        netLoansGiven,
-        bankBalance,
-        savingsBalance,
-        loansGiven,
-        loansReturned,
-        totalAsset,
-      },
-    });
-  } catch (error: any) {
-    console.error('Asset Summary Error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to calculate asset summary' },
       { status: 500 }
     );
   }
