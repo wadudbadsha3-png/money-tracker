@@ -23,31 +23,58 @@ export function TransactionTable({
   onDelete,
 }: TransactionTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
+  const [filterType, setFilterType] = useState<string>('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc')
+
+  // সব ক্যাটাগরি (ইনকাম + এক্সপেন্স + স্পেশাল)
+  const allCategories = useMemo(() => {
+    const cats = new Set(transactions.map(t => t.category))
+    return Array.from(cats).sort()
+  }, [transactions])
 
   const filteredAndSorted = useMemo(() => {
     let filtered = [...transactions]
 
+    // সার্চ
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim()
       filtered = filtered.filter(t =>
         t.description.toLowerCase().includes(term) ||
         t.category.toLowerCase().includes(term) ||
         (t.personName && t.personName.toLowerCase().includes(term)) ||
+        (t.loanPersonName && t.loanPersonName.toLowerCase().includes(term)) ||
         (t.accountName && t.accountName.toLowerCase().includes(term))
       )
     }
 
+    // টাইপ ফিল্টার
     if (filterType !== 'all') {
-      filtered = filtered.filter(t => t.type === filterType)
+      if (filterType === 'income') {
+        filtered = filtered.filter(t => t.type === 'income' && t.category !== 'Return')
+      } else if (filterType === 'expense') {
+        filtered = filtered.filter(t => t.type === 'expense' && t.category !== 'Lend' && t.category !== 'Savings' && t.category !== 'Savings Withdraw')
+      } else if (filterType === 'lend') {
+        filtered = filtered.filter(t => t.category === 'Lend')
+      } else if (filterType === 'return') {
+        filtered = filtered.filter(t => t.category === 'Return')
+      } else if (filterType === 'loan_taken') {
+        filtered = filtered.filter(t => t.category === 'Loan Taken')
+      } else if (filterType === 'loan_repayment') {
+        filtered = filtered.filter(t => t.category === 'Loan Repayment')
+      } else if (filterType === 'savings') {
+        filtered = filtered.filter(t => t.category === 'Savings')
+      } else if (filterType === 'savings_withdraw') {
+        filtered = filtered.filter(t => t.category === 'Savings Withdraw')
+      }
     }
 
+    // ক্যাটাগরি ফিল্টার
     if (filterCategory !== 'all') {
       filtered = filtered.filter(t => t.category === filterCategory)
     }
 
+    // সোর্ট
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date-desc': return new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -72,6 +99,11 @@ export function TransactionTable({
     }
   }
 
+  const getCategoryIcon = (categoryName: string) => {
+    const category = categories.find(c => c.name === categoryName)
+    return category?.icon || '📝'
+  }
+
   const getPersonBankDisplay = (transaction: Transaction) => {
     if (transaction.personName) {
       if (transaction.category === 'Lend') {
@@ -81,6 +113,15 @@ export function TransactionTable({
         return { icon: '📥', label: 'Return from', name: transaction.personName, color: 'text-green-600' }
       }
       return { icon: '👤', label: 'Person', name: transaction.personName, color: 'text-blue-600' }
+    }
+    
+    if (transaction.loanPersonName) {
+      if (transaction.category === 'Loan Taken') {
+        return { icon: '🏦', label: 'Loan from', name: transaction.loanPersonName, color: 'text-orange-600' }
+      }
+      if (transaction.category === 'Loan Repayment') {
+        return { icon: '💳', label: 'Repaid to', name: transaction.loanPersonName, color: 'text-green-600' }
+      }
     }
     
     if (transaction.accountName) {
@@ -101,43 +142,78 @@ export function TransactionTable({
       {/* Filters */}
       <div className="space-y-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          
+          {/* Search */}
           <Input
-            placeholder="Search transactions, person, bank..."
+            placeholder="🔍 Search transactions, person, bank..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-            <SelectTrigger>
+          
+          {/* Type Filter */}
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="all">📋 All Types</SelectItem>
+              <SelectItem value="income">💰 Income</SelectItem>
+              <SelectItem value="expense">💸 Expense</SelectItem>
+              <SelectItem value="lend">📤 Lend</SelectItem>
+              <SelectItem value="return">📥 Return</SelectItem>
+              <SelectItem value="loan_taken">🏦 Loan Taken</SelectItem>
+              <SelectItem value="loan_repayment">💳 Loan Repayment</SelectItem>
+              <SelectItem value="savings">🏦 Savings</SelectItem>
+              <SelectItem value="savings_withdraw">🏧 Savings Withdraw</SelectItem>
             </SelectContent>
           </Select>
+          
+          {/* Category Filter - সব ক্যাটাগরি সহ */}
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.name}>
-                  {cat.icon} {cat.name}
-                </SelectItem>
-              ))}
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">📋 All Categories</SelectItem>
+              
+              {/* Income Categories */}
+              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">INCOME</div>
+              <SelectItem value="Salary">💰 Salary</SelectItem>
+              <SelectItem value="Freelance">💻 Freelance</SelectItem>
+              <SelectItem value="Business">📈 Business</SelectItem>
+              
+              {/* Expense Categories */}
+              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 mt-1">EXPENSE</div>
+              <SelectItem value="Food">🍔 Food</SelectItem>
+              <SelectItem value="Transport">🚗 Transport</SelectItem>
+              <SelectItem value="Shopping">🛍️ Shopping</SelectItem>
+              <SelectItem value="Entertainment">🎬 Entertainment</SelectItem>
+              <SelectItem value="Bills">💡 Bills</SelectItem>
+              <SelectItem value="Health">🏥 Health</SelectItem>
+              <SelectItem value="House Rent">🏠 House Rent</SelectItem>
+              <SelectItem value="Other">📝 Other</SelectItem>
+              
+              {/* Special Categories */}
+              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 mt-1">SPECIAL</div>
+              <SelectItem value="Lend">📤 Lend</SelectItem>
+              <SelectItem value="Return">📥 Return</SelectItem>
+              <SelectItem value="Savings">🏦 Savings</SelectItem>
+              <SelectItem value="Savings Withdraw">🏧 Savings Withdraw</SelectItem>
+              <SelectItem value="Loan Taken">🏦 Loan Taken</SelectItem>
+              <SelectItem value="Loan Repayment">💳 Loan Repayment</SelectItem>
             </SelectContent>
           </Select>
+          
+          {/* Sort By */}
           <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="date-desc">Newest First</SelectItem>
-              <SelectItem value="date-asc">Oldest First</SelectItem>
-              <SelectItem value="amount-desc">Highest Amount</SelectItem>
-              <SelectItem value="amount-asc">Lowest Amount</SelectItem>
+              <SelectItem value="date-desc">📅 Newest First</SelectItem>
+              <SelectItem value="date-asc">📅 Oldest First</SelectItem>
+              <SelectItem value="amount-desc">💰 Highest Amount</SelectItem>
+              <SelectItem value="amount-asc">💰 Lowest Amount</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -154,7 +230,7 @@ export function TransactionTable({
               <th className="text-left py-3 px-4 font-semibold text-sm">Person / Bank</th>
               <th className="text-right py-3 px-4 font-semibold text-sm">Amount</th>
               <th className="text-right py-3 px-4 font-semibold text-sm">Actions</th>
-            </tr>
+             </tr>
           </thead>
           <tbody>
             {filteredAndSorted.length === 0 ? (
@@ -166,14 +242,12 @@ export function TransactionTable({
             ) : (
               filteredAndSorted.map((transaction) => {
                 const personBank = getPersonBankDisplay(transaction)
-                const uniqueKey = transaction.id || `fallback-${Date.now()}-${Math.random()}`
-
                 return (
-                  <tr key={uniqueKey} className="border-b hover:bg-muted/50 transition-colors">
+                  <tr key={transaction.id || transaction._id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="py-3 px-4 text-sm">{formatDate(transaction.date)}</td>
                     <td className="py-3 px-4 text-sm font-medium">{transaction.description}</td>
                     <td className="py-3 px-4 text-sm">
-                      {categories.find(c => c.name === transaction.category)?.icon} {transaction.category}
+                      {getCategoryIcon(transaction.category)} {transaction.category}
                     </td>
                     <td className="py-3 px-4 text-sm">
                       {personBank ? (
@@ -186,12 +260,20 @@ export function TransactionTable({
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </td>
-                    <td className={`py-3 px-4 text-sm font-semibold text-right ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                    <td className={`py-3 px-4 text-sm font-semibold text-right ${
+                      transaction.type === 'income' || transaction.category === 'Return' 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {transaction.type === 'income' || transaction.category === 'Return' ? '+' : '-'}
+                      {formatCurrency(transaction.amount)}
                     </td>
                     <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                       <Button variant="outline" size="sm" onClick={() => onEdit(transaction)}>
                         Edit
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(transaction.id || transaction._id)}>
+                        Delete
                       </Button>
                     </td>
                   </tr>
@@ -202,27 +284,27 @@ export function TransactionTable({
         </table>
       </div>
 
-      {/* Summary - এখানে পরিবর্তন করা হয়েছে */}
+      {/* Summary */}
       {filteredAndSorted.length > 0 && (
         <div className="flex justify-between items-center mt-6 pt-4 border-t text-sm">
           <p className="text-muted-foreground">
-            Showing {filteredAndSorted.length} transaction(s)
+            Showing {filteredAndSorted.length} of {transactions.length} transaction(s)
           </p>
           <div className="space-x-6">
             <span>
-              Income: <span className="font-semibold text-green-600">
+              Total Income: <span className="font-semibold text-green-600">
                 {formatCurrency(
                   filteredAndSorted
-                    .filter(t => t.type === 'income')
+                    .filter(t => t.type === 'income' || t.category === 'Return')
                     .reduce((sum, t) => sum + t.amount, 0)
                 )}
               </span>
             </span>
             <span>
-              Expense: <span className="font-semibold text-red-600">
+              Total Expense: <span className="font-semibold text-red-600">
                 {formatCurrency(
                   filteredAndSorted
-                    .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
+                    .filter(t => (t.type === 'expense' && t.category !== 'Savings') || t.category === 'Lend')
                     .reduce((sum, t) => sum + t.amount, 0)
                 )}
               </span>

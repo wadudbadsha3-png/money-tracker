@@ -7,10 +7,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createTransaction, updateTransaction } from '@/hooks/useTransactions'
-import { useCategories } from '@/hooks/useCategories'
 import { Transaction, Category } from '@/lib/types'
 
-// ডিফল্ট ক্যাটাগরি (API না আসলে ব্যবহার হবে)
+interface TransactionFormProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  transaction?: Transaction
+  categories?: Category[]  // 🆕 categories প্রপ যোগ করা হয়েছে
+  onSuccess?: () => void
+}
+
+// ডিফল্ট ক্যাটাগরি (API না আসলে বা categories প্রপ না দিলে ব্যবহার হবে)
 const DEFAULT_CATEGORIES: Category[] = [
   { id: '1', name: 'Salary', icon: '💰', type: 'income', color: '#4CAF50' },
   { id: '2', name: 'Freelance', icon: '💻', type: 'income', color: '#2196F3' },
@@ -21,44 +28,29 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '7', name: 'Entertainment', icon: '🎬', type: 'expense', color: '#9C27B0' },
   { id: '8', name: 'Bills', icon: '💡', type: 'expense', color: '#607D8B' },
   { id: '9', name: 'Health', icon: '🏥', type: 'expense', color: '#E91E63' },
-  { id: '10', name: 'Lend', icon: '📤', type: 'expense', color: '#FF9800' },
-  { id: '11', name: 'Return', icon: '📥', type: 'expense', color: '#4CAF50' },
-  { id: '12', name: 'Savings', icon: '🏦', type: 'transfer', color: '#2196F3' },
-  { id: '13', name: 'Loan Taken', icon: '🏦', type: 'liability', color: '#FF6B00' },
-  { id: '14', name: 'Loan Repayment', icon: '💳', type: 'liability', color: '#00ACC1' },
-  { id: '15', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
+  { id: '10', name: 'House Rent', icon: '🏠', type: 'expense', color: '#8D6E63' },
+  { id: '11', name: 'Savings', icon: '🏦', type: 'transfer', color: '#2196F3' },
+  { id: '12', name: 'Loan Taken', icon: '🏦', type: 'liability', color: '#FF6B00' },
+  { id: '13', name: 'Loan Repayment', icon: '💳', type: 'liability', color: '#00ACC1' },
+  { id: '14', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
 ]
-
-interface TransactionFormProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  transaction?: Transaction
-  onSuccess?: () => void
-}
 
 export function TransactionForm({
   open,
   onOpenChange,
   transaction,
+  categories: propCategories,  // 🆕 প্রপ থেকে নিচ্ছি
   onSuccess,
 }: TransactionFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   
-  // সরাসরি useCategories হুক ব্যবহার করছি
-  const { categories: apiCategories, isLoading: categoriesLoading } = useCategories()
-  
-  // API থেকে আসা ক্যাটাগরি বা ডিফল্ট ক্যাটাগরি ব্যবহার করব
-  // এবং duplicate entries সরিয়ে ফেলব
-  const rawCategories = apiCategories.length > 0 ? apiCategories : DEFAULT_CATEGORIES
+  // প্রপ থেকে আসা ক্যাটাগরি বা ডিফল্ট ব্যবহার করব
+  const rawCategories = propCategories && propCategories.length > 0 ? propCategories : DEFAULT_CATEGORIES
   
   // unique ক্যাটাগরি নিশ্চিত করছি (name এবং type এর ভিত্তিতে)
   const categories = Array.from(
     new Map(rawCategories.map(cat => [`${cat.name}-${cat.type}`, cat])).values()
   )
-  
-  // ডিবাগ করার জন্য কনসোল লগ
-  console.log('API Categories:', apiCategories)
-  console.log('Final Categories:', categories)
   
   // ট্রানজেকশন থেকে selectedOption বের করার ফাংশন
   const getSelectedOptionFromTransaction = (t?: Transaction) => {
@@ -81,10 +73,9 @@ export function TransactionForm({
     description: '',
     personName: '',
     accountName: '',
-    loanPersonName: '', // জন্য loan neoa & porishod এর জন্য
+    loanPersonName: '',
   })
 
-  // 🔄 transaction এডিট মোডে ফর্ম আপডেট করার জন্য useEffect
   useEffect(() => {
     if (transaction) {
       setFormData({
@@ -117,14 +108,14 @@ export function TransactionForm({
   const isSavingsOrWithdraw = selectedOption === 'savings' || selectedOption === 'savings_withdraw'
   const isNormal = selectedOption === 'income' || selectedOption === 'expense'
 
-  // ফিল্টার করা ক্যাটাগরি (selectedOption অনুযায়ী) - unique keys নিশ্চিত করছি
+  // ফিল্টার করা ক্যাটাগরি - Expense এ Lend এবং Return বাদ
   const filteredCategories = categories.filter(cat => {
     if (selectedOption === 'income') return cat.type === 'income'
-    if (selectedOption === 'expense') return cat.type === 'expense'
+    if (selectedOption === 'expense') {
+      return cat.type === 'expense' && cat.name !== 'Lend' && cat.name !== 'Return'
+    }
     return false
   })
-  
-  console.log('Filtered Categories for', selectedOption, ':', filteredCategories)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -151,25 +142,23 @@ export function TransactionForm({
         payload.personName = formData.personName
       }
       else if (selectedOption === 'return') {
-        payload.type = 'expense'
+        payload.type = 'income'
         payload.category = 'Return'
         payload.personName = formData.personName
       }
       else if (selectedOption === 'loan_taken') {
-        // লোন নেওয়া - Liability টাইপ (নিজের দায়)
         payload.type = 'liability'
         payload.category = 'Loan Taken'
         payload.loanPersonName = formData.loanPersonName
-        payload.personName = formData.loanPersonName // ব্যাকওয়ার্ড কম্প্যাটিবিলিটি
-        payload.isLoanTaken = true // লোন নেওয়ার ফ্ল্যাগ
+        payload.personName = formData.loanPersonName
+        payload.isLoanTaken = true
       }
       else if (selectedOption === 'loan_repayment') {
-        // লোন পরিশোধ - Liability টাইপ (দায় কমানো)
         payload.type = 'liability'
         payload.category = 'Loan Repayment'
         payload.loanPersonName = formData.loanPersonName
-        payload.personName = formData.loanPersonName // ব্যাকওয়ার্ড কম্প্যাটিবিলিটি
-        payload.isLoanRepayment = true // লোন পরিশোধের ফ্ল্যাগ
+        payload.personName = formData.loanPersonName
+        payload.isLoanRepayment = true
       }
       else if (selectedOption === 'savings') {
         payload.type = 'expense'
@@ -237,8 +226,8 @@ export function TransactionForm({
                 <SelectItem value="expense">💸 Expense</SelectItem>
                 <SelectItem value="lend">📤 Lend (Give Money)</SelectItem>
                 <SelectItem value="return">📥 Return (Get Back)</SelectItem>
-                <SelectItem value="loan_taken">🏦 Loan Taken (নেওয়া - Liability)</SelectItem>
-                <SelectItem value="loan_repayment">💳 Loan Repayment (পরিশোধ)</SelectItem>
+                <SelectItem value="loan_taken">🏦 Loan Taken</SelectItem>
+                <SelectItem value="loan_repayment">💳 Loan Repayment </SelectItem>
                 <SelectItem value="savings">🏦 Savings Deposit</SelectItem>
                 <SelectItem value="savings_withdraw">🏧 Savings Withdraw</SelectItem>
               </SelectContent>
@@ -352,7 +341,7 @@ export function TransactionForm({
                 value={
                   selectedOption === 'lend' ? 'Lend' :
                   selectedOption === 'return' ? 'Return' :
-                  selectedOption === 'loan_taken' ? 'Loan Taken (Liability)' :
+                  selectedOption === 'loan_taken' ? 'Loan Taken' :
                   selectedOption === 'loan_repayment' ? 'Loan Repayment' :
                   selectedOption === 'savings' ? 'Savings' :
                   'Savings Withdraw'
@@ -393,14 +382,14 @@ export function TransactionForm({
           {/* Info Note for Loan Taken */}
           {selectedOption === 'loan_taken' && (
             <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded-md">
-              ⚠️ Liability: This loan taken will be recorded as a liability (দায়) and will increase your total loan liability.
+              ⚠️ Liability: This loan taken will be recorded as a liability (দায়).
             </div>
           )}
 
           {/* Info Note for Loan Repayment */}
           {selectedOption === 'loan_repayment' && (
             <div className="text-xs text-green-600 bg-green-50 p-2 rounded-md">
-              ✅ This loan repayment will reduce your total loan liability (দায় কমানো হবে).
+              ✅ This loan repayment will reduce your loan liability (দায় কমানো হবে).
             </div>
           )}
 

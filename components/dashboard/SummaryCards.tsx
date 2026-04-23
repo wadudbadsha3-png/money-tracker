@@ -1,4 +1,3 @@
-// components/dashboard/SummaryCards.tsx (Remaining Loan বাদ - সরাসরি Loan Taken বিয়োগ)
 'use client'
 
 import { Card } from '@/components/ui/card'
@@ -19,7 +18,6 @@ interface SummaryCardsProps {
   transactions: Transaction[]
 }
 
-// Integer ফরম্যাট - শুধু পূর্ণ সংখ্যা, কোন .00 নেই
 const formatInteger = (amount: number) => {
   const integerAmount = Math.floor(amount)
   return `$${integerAmount.toLocaleString()}`
@@ -31,33 +29,33 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0))
     
-  // মোট খরচ (Return এবং Savings Withdraw বাদ দিয়ে)
+  // মোট খরচ
   const totalExpenses = Math.floor(transactions
     .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
     .reduce((sum, t) => sum + t.amount, 0))
-    
-  // ব্যালেন্স
-  const balance = Math.floor(totalIncome - totalExpenses)
+  
+  // বাকি লোন = Loan Taken
+  const loanTaken = Math.floor(transactions
+    .filter(t => t.category === 'Loan Taken')
+    .reduce((sum, t) => sum + t.amount, 0))
 
-  // সরাসরি Lend
+  // Balance = Income - Expense + Loan Taken
+  const balance = Math.floor(totalIncome - totalExpenses + loanTaken)
+
+  // Lend
   const totalLend = Math.floor(transactions
     .filter(t => t.category === 'Lend')
     .reduce((sum, t) => sum + t.amount, 0))
 
-  // সরাসরি Savings
+  // Savings
   const totalSavings = Math.floor(transactions
     .filter(t => t.category === 'Savings')
     .reduce((sum, t) => sum + t.amount, 0))
 
-  // Loan Taken (লায়েবিলিটি)
-  const totalLoanTaken = Math.floor(transactions
-    .filter(t => t.category === 'Loan Taken')
-    .reduce((sum, t) => sum + t.amount, 0))
+  // 🎯 Total Asset = Balance + Lend + Savings - (2 × Loan Taken)
+  const totalAsset = Math.floor(balance + totalLend + totalSavings - (2 * loanTaken))
 
-  // 🎯 Total Asset = Balance + Lend + Savings - Loan Taken
-  const totalAsset = Math.floor(balance + totalLend + totalSavings - totalLoanTaken)
-
-  // বর্তমান মাসের পরিসংখ্যান
+  // This Month
   const currentMonth = new Date().toISOString().slice(0, 7)
   const thisMonthTransactions = transactions.filter(t => t.date.startsWith(currentMonth))
   const thisMonthIncome = Math.floor(thisMonthTransactions
@@ -72,7 +70,6 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
       {/* First Row - 4 Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         
-        {/* Total Income */}
         <Card className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200 dark:border-green-800">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground font-medium">Total Income</p>
@@ -84,7 +81,6 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
           <p className="text-xs text-muted-foreground mt-1">All time</p>
         </Card>
 
-        {/* Total Expenses */}
         <Card className="p-3 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border-red-200 dark:border-red-800">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground font-medium">Total Expenses</p>
@@ -96,27 +92,19 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
           <p className="text-xs text-muted-foreground mt-1">All time</p>
         </Card>
 
-        {/* Balance */}
-        <Card className={`p-3 bg-gradient-to-br ${
-          balance >= 0 
-            ? 'from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800'
-            : 'from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/50 border-orange-200 dark:border-orange-800'
-        }`}>
+        <Card className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground font-medium">Balance</p>
-            <Wallet className="w-4 h-4" />
+            <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className={`text-xl md:text-2xl font-bold ${
-            balance >= 0 
-              ? 'text-blue-600 dark:text-blue-400' 
-              : 'text-orange-600 dark:text-orange-400'
-          }`}>
+          <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">
             {formatInteger(balance)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Cash in hand</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Income - Expense + Loan
+          </p>
         </Card>
 
-        {/* Total Asset */}
         <Card className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border-purple-200 dark:border-purple-800">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs text-muted-foreground font-medium">Total Asset</p>
@@ -126,12 +114,12 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             {formatInteger(totalAsset)}
           </p>
           <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
-            Balance + Lend + Savings - Loan Taken
+            Balance + Lend + Savings - 2×Loan
           </p>
         </Card>
       </div>
 
-      {/* Second Row - 2 Cards (Lend & Savings) */}
+      {/* Second Row - Lend & Savings */}
       <div className="grid grid-cols-2 gap-3">
         
         <Card className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-900/50 border-orange-200 dark:border-orange-800">
@@ -161,24 +149,24 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         </Card>
       </div>
 
-      {/* Third Row - Only Loan Taken Card (Remaining Loan বাদ) */}
+      {/* Third Row - Remaining Loan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         
         <Card className="p-3 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/50 dark:to-rose-900/50 border-red-200 dark:border-red-800">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground font-medium">Loan Taken</p>
+            <p className="text-xs text-muted-foreground font-medium">Remaining Loan</p>
             <Landmark className="w-4 h-4 text-red-600 dark:text-red-400" />
           </div>
           <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400">
-            {formatInteger(totalLoanTaken)}
+            {formatInteger(loanTaken)}
           </p>
           <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-            Total borrowed (Liability)
+            {loanTaken > 0 ? 'Need to repay' : 'No loan pending'}
           </p>
         </Card>
       </div>
 
-      {/* Fourth Row - This Month Summary */}
+      {/* Fourth Row - This Month */}
       <div className="grid grid-cols-2 gap-3">
         
         <Card className="p-3 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
