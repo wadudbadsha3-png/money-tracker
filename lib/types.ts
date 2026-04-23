@@ -1,12 +1,7 @@
 // lib/types.ts
 
-<<<<<<< HEAD
-// Transaction types
-export type TransactionType = 'income' | 'expense';
-=======
 // Transaction types - Transfer যোগ করুন
-export type TransactionType = 'income' | 'expense' | 'transfer';
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
+export type TransactionType = 'income' | 'expense' | 'transfer'; 
 
 export interface Transaction {
   id: string;
@@ -34,13 +29,11 @@ export interface CreateTransactionInput {
   category: string;
   date: string;
   description: string;
-<<<<<<< HEAD
   personName?: string;      // 🆕
   accountName?: string;     // 🆕
-=======
+
   fromAccount?: string;   // ট্রান্সফারের জন্য
   toAccount?: string;     // ট্রান্সফারের জন্য
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 }
 
 export interface UpdateTransactionInput {
@@ -49,13 +42,11 @@ export interface UpdateTransactionInput {
   category?: string;
   date?: string;
   description?: string;
-<<<<<<< HEAD
   personName?: string;      // 🆕
   accountName?: string;     // 🆕
-=======
+
   fromAccount?: string;
   toAccount?: string;
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 }
 
 // Category types (same as before)
@@ -166,7 +157,6 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   error?: string;
-<<<<<<< HEAD
 }
 
 // 🆕 লেন্ড সামারি টাইপ
@@ -183,6 +173,4 @@ export interface SavingsSummary {
   totalDeposit: number;
   totalWithdraw: number;
   balance: number;
-=======
->>>>>>> 331615a85d70ecb1c598a746fde1d0391e5a333f
 }

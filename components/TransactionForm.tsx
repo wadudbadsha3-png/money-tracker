@@ -24,7 +24,9 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '10', name: 'Lend', icon: '📤', type: 'expense', color: '#FF9800' },
   { id: '11', name: 'Return', icon: '📥', type: 'expense', color: '#4CAF50' },
   { id: '12', name: 'Savings', icon: '🏦', type: 'transfer', color: '#2196F3' },
-  { id: '13', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
+  { id: '13', name: 'Loan Taken', icon: '🏦', type: 'liability', color: '#FF6B00' },
+  { id: '14', name: 'Loan Repayment', icon: '💳', type: 'liability', color: '#00ACC1' },
+  { id: '15', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
 ]
 
 interface TransactionFormProps {
@@ -46,7 +48,13 @@ export function TransactionForm({
   const { categories: apiCategories, isLoading: categoriesLoading } = useCategories()
   
   // API থেকে আসা ক্যাটাগরি বা ডিফল্ট ক্যাটাগরি ব্যবহার করব
-  const categories = apiCategories.length > 0 ? apiCategories : DEFAULT_CATEGORIES
+  // এবং duplicate entries সরিয়ে ফেলব
+  const rawCategories = apiCategories.length > 0 ? apiCategories : DEFAULT_CATEGORIES
+  
+  // unique ক্যাটাগরি নিশ্চিত করছি (name এবং type এর ভিত্তিতে)
+  const categories = Array.from(
+    new Map(rawCategories.map(cat => [`${cat.name}-${cat.type}`, cat])).values()
+  )
   
   // ডিবাগ করার জন্য কনসোল লগ
   console.log('API Categories:', apiCategories)
@@ -58,6 +66,8 @@ export function TransactionForm({
     if (t.type === 'income') return 'income'
     if (t.category === 'Lend') return 'lend'
     if (t.category === 'Return') return 'return'
+    if (t.category === 'Loan Taken') return 'loan_taken'
+    if (t.category === 'Loan Repayment') return 'loan_repayment'
     if (t.category === 'Savings') return 'savings'
     if (t.category === 'Savings Withdraw') return 'savings_withdraw'
     return t.type || 'expense'
@@ -71,6 +81,7 @@ export function TransactionForm({
     description: '',
     personName: '',
     accountName: '',
+    loanPersonName: '', // জন্য loan neoa & porishod এর জন্য
   })
 
   // 🔄 transaction এডিট মোডে ফর্ম আপডেট করার জন্য useEffect
@@ -84,6 +95,7 @@ export function TransactionForm({
         description: transaction.description || '',
         personName: transaction.personName || '',
         accountName: transaction.accountName || '',
+        loanPersonName: transaction.loanPersonName || '',
       })
     } else {
       setFormData({
@@ -94,17 +106,23 @@ export function TransactionForm({
         description: '',
         personName: '',
         accountName: '',
+        loanPersonName: '',
       })
     }
   }, [transaction, open])
 
   const selectedOption = formData.selectedOption
   const isLendOrReturn = selectedOption === 'lend' || selectedOption === 'return'
+  const isLoanTakenOrRepayment = selectedOption === 'loan_taken' || selectedOption === 'loan_repayment'
   const isSavingsOrWithdraw = selectedOption === 'savings' || selectedOption === 'savings_withdraw'
   const isNormal = selectedOption === 'income' || selectedOption === 'expense'
 
-  // ফিল্টার করা ক্যাটাগরি (selectedOption অনুযায়ী)
-  const filteredCategories = categories.filter(cat => cat.type === selectedOption)
+  // ফিল্টার করা ক্যাটাগরি (selectedOption অনুযায়ী) - unique keys নিশ্চিত করছি
+  const filteredCategories = categories.filter(cat => {
+    if (selectedOption === 'income') return cat.type === 'income'
+    if (selectedOption === 'expense') return cat.type === 'expense'
+    return false
+  })
   
   console.log('Filtered Categories for', selectedOption, ':', filteredCategories)
 
@@ -137,6 +155,22 @@ export function TransactionForm({
         payload.category = 'Return'
         payload.personName = formData.personName
       }
+      else if (selectedOption === 'loan_taken') {
+        // লোন নেওয়া - Liability টাইপ (নিজের দায়)
+        payload.type = 'liability'
+        payload.category = 'Loan Taken'
+        payload.loanPersonName = formData.loanPersonName
+        payload.personName = formData.loanPersonName // ব্যাকওয়ার্ড কম্প্যাটিবিলিটি
+        payload.isLoanTaken = true // লোন নেওয়ার ফ্ল্যাগ
+      }
+      else if (selectedOption === 'loan_repayment') {
+        // লোন পরিশোধ - Liability টাইপ (দায় কমানো)
+        payload.type = 'liability'
+        payload.category = 'Loan Repayment'
+        payload.loanPersonName = formData.loanPersonName
+        payload.personName = formData.loanPersonName // ব্যাকওয়ার্ড কম্প্যাটিবিলিটি
+        payload.isLoanRepayment = true // লোন পরিশোধের ফ্ল্যাগ
+      }
       else if (selectedOption === 'savings') {
         payload.type = 'expense'
         payload.category = 'Savings'
@@ -164,6 +198,7 @@ export function TransactionForm({
         description: '',
         personName: '',
         accountName: '',
+        loanPersonName: '',
       })
       onOpenChange(false)
       onSuccess?.()
@@ -191,7 +226,7 @@ export function TransactionForm({
             <Select 
               value={formData.selectedOption} 
               onValueChange={(value: any) =>
-                setFormData({ ...formData, selectedOption: value, category: '', personName: '', accountName: '' })
+                setFormData({ ...formData, selectedOption: value, category: '', personName: '', accountName: '', loanPersonName: '' })
               }
             >
               <SelectTrigger id="selectedOption" className="w-full h-11">
@@ -202,11 +237,31 @@ export function TransactionForm({
                 <SelectItem value="expense">💸 Expense</SelectItem>
                 <SelectItem value="lend">📤 Lend (Give Money)</SelectItem>
                 <SelectItem value="return">📥 Return (Get Back)</SelectItem>
+                <SelectItem value="loan_taken">🏦 Loan Taken (নেওয়া - Liability)</SelectItem>
+                <SelectItem value="loan_repayment">💳 Loan Repayment (পরিশোধ)</SelectItem>
                 <SelectItem value="savings">🏦 Savings Deposit</SelectItem>
                 <SelectItem value="savings_withdraw">🏧 Savings Withdraw</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {/* Person Name - for Loan Taken & Loan Repayment */}
+          {isLoanTakenOrRepayment && (
+            <div className="space-y-2">
+              <Label htmlFor="loanPersonName" className="text-sm font-medium">
+                {selectedOption === 'loan_taken' ? '👤 Loan Taken From (Person/Bank Name)' : '👤 Loan Repayment To (Person/Bank Name)'}
+              </Label>
+              <Input
+                id="loanPersonName"
+                type="text"
+                placeholder={selectedOption === 'loan_taken' ? 'e.g., Bank Asia, Rahim, Friend' : 'e.g., Bank Asia, Rahim'}
+                value={formData.loanPersonName}
+                onChange={(e) => setFormData({ ...formData, loanPersonName: e.target.value })}
+                className="h-11 text-base"
+                required
+              />
+            </div>
+          )}
 
           {/* Person Name - for Lend & Return */}
           {isLendOrReturn && (
@@ -246,7 +301,15 @@ export function TransactionForm({
 
           {/* Amount */}
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-sm font-medium">Amount ($)</Label>
+            <Label htmlFor="amount" className="text-sm font-medium">
+              Amount ($)
+              {selectedOption === 'loan_repayment' && (
+                <span className="text-xs text-muted-foreground ml-2">(This will reduce your liability)</span>
+              )}
+              {selectedOption === 'loan_taken' && (
+                <span className="text-xs text-muted-foreground ml-2">(This will increase your liability)</span>
+              )}
+            </Label>
             <Input
               id="amount"
               type="number"
@@ -289,6 +352,8 @@ export function TransactionForm({
                 value={
                   selectedOption === 'lend' ? 'Lend' :
                   selectedOption === 'return' ? 'Return' :
+                  selectedOption === 'loan_taken' ? 'Loan Taken (Liability)' :
+                  selectedOption === 'loan_repayment' ? 'Loan Repayment' :
                   selectedOption === 'savings' ? 'Savings' :
                   'Savings Withdraw'
                 }
@@ -324,6 +389,20 @@ export function TransactionForm({
               required
             />
           </div>
+
+          {/* Info Note for Loan Taken */}
+          {selectedOption === 'loan_taken' && (
+            <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded-md">
+              ⚠️ Liability: This loan taken will be recorded as a liability (দায়) and will increase your total loan liability.
+            </div>
+          )}
+
+          {/* Info Note for Loan Repayment */}
+          {selectedOption === 'loan_repayment' && (
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded-md">
+              ✅ This loan repayment will reduce your total loan liability (দায় কমানো হবে).
+            </div>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">

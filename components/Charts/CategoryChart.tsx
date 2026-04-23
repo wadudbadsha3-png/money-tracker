@@ -10,42 +10,51 @@ import {
 } from 'recharts'
 import { Transaction, Category } from '@/lib/types'
 
-// প্রি-ডিফাইন্ড কালার (যদি ক্যাটাগরিতে কালার না থাকে)
 const DEFAULT_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
   '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
-  '#F8C471', '#A569BD', '#5DADE2', '#58D68D', '#F1948A'
+  '#F8C471', '#A569BD', '#5DADE2', '#58D68F', '#F1948A'
 ]
 
+interface CategoryChartProps {
+  transactions: Transaction[]
+  categories: Category[]
+}
+
 export function CategoryChart({ transactions, categories }: CategoryChartProps) {
-  // Group expenses by category (Return এবং Savings Withdraw বাদ দিয়ে)
   const categoryData: Record<string, number> = {}
 
   transactions
-    .filter(t => t.type === 'expense' && t.category !== 'Return' && t.category !== 'Savings Withdraw')
-    .forEach(tx => {
-      if (!categoryData[tx.category]) {
-        categoryData[tx.category] = 0
+    .filter(t => {
+      // Expense দেখাবে (Return, Savings Withdraw, Loan Repayment বাদ)
+      if (t.type === 'expense') {
+        const exclude = ['Return', 'Savings Withdraw', 'Loan Repayment']
+        return !exclude.includes(t.category)
       }
-      categoryData[tx.category] += tx.amount
+      // Loan Taken দেখাবে
+      if (t.type === 'liability' && t.category === 'Loan Taken') {
+        return true
+      }
+      return false
+    })
+    .forEach(tx => {
+      categoryData[tx.category] = (categoryData[tx.category] || 0) + tx.amount
     })
 
   const data = Object.entries(categoryData).map(([category, amount]) => ({
     name: category,
-    value: amount,
+    value: Math.floor(amount), // Integer করে নিচ্ছি
   }))
 
-  // ক্যাটাগরির কালার ম্যাপ তৈরি করুন
   const colorMap: Record<string, string> = {}
   categories.forEach((cat, index) => {
     colorMap[cat.name] = cat.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]
   })
 
-  // যদি কোন ডাটা না থাকে
   if (data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        No expense data available
+        No expense or loan data available
       </div>
     )
   }
@@ -58,16 +67,19 @@ export function CategoryChart({ transactions, categories }: CategoryChartProps) 
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, value }) => `${name}: $${value.toFixed(2)}`}
+          label={({ name, value }) => `${name}: $${value.toLocaleString()}`}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colorMap[entry.name] || DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
+            <Cell 
+              key={`cell-${index}`} 
+              fill={colorMap[entry.name] || DEFAULT_COLORS[index % DEFAULT_COLORS.length]} 
+            />
           ))}
         </Pie>
-        <Tooltip formatter={(value: any) => `$${value.toFixed(2)}`} />
+        <Tooltip formatter={(value: any) => `$${Math.floor(value).toLocaleString()}`} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>

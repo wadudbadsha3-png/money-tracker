@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     let query: any = {};
 
     if (category) query.category = category;
-    if (type && (type === 'income' || type === 'expense' || type === 'transfer')) {
+    if (type && (type === 'income' || type === 'expense' || type === 'transfer' || type === 'liability')) {
       query.type = type;
     }
     
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ✅ আপডেটেড POST - Transfer সাপোর্ট সহ
+// ✅ আপডেটেড POST - Loan Taken & Loan Repayment সাপোর্ট সহ
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
@@ -68,14 +68,88 @@ export async function POST(request: NextRequest) {
     console.log('📥 Received payload:', body);
 
     // বেসিক ভ্যালিডেশন
-    if (!body.amount || !body.type || !body.category || !body.date || !body.description) {
+    if (!body.amount || !body.date || !body.description) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: amount and date are required' },
+        { success: false, error: 'Missing required fields: amount, date and description are required' },
         { status: 400 }
       );
     }
 
+    // =============================================
+    // LOAN TAKEN (নেওয়া) - Liability
+    // =============================================
+    if (body.category === 'Loan Taken') {
+      const transaction = await Transaction.create({
+        amount: parseFloat(body.amount),
+        type: 'liability',
+        category: 'Loan Taken',
+        date: new Date(body.date),
+        description: body.description || '',
+        loanPersonName: body.loanPersonName || body.personName || null,
+        personName: body.loanPersonName || body.personName || null,
+      });
+      console.log('✅ Loan Taken created:', transaction);
+      return NextResponse.json({ success: true, data: transaction }, { status: 201 });
+    }
+
+    // =============================================
+    // LOAN REPAYMENT (পরিশোধ) - Reduce Liability
+    // =============================================
+    if (body.category === 'Loan Repayment') {
+      // আগের সব Loan Taken খুঁজে বের করো
+      const pendingLoans = await Transaction.find({
+        category: 'Loan Taken',
+        type: 'liability',
+        loanPersonName: body.loanPersonName || body.personName,
+      }).sort({ date: 1 });
+
+      console.log(`🔍 Found ${pendingLoans.length} pending loans for ${body.loanPersonName || body.personName}`);
+
+      if (pendingLoans.length === 0) {
+        return NextResponse.json(
+          { success: false, error: `No pending loan found for ${body.loanPersonName || body.personName}` },
+          { status: 400 }
+        );
+      }
+
+      let repaymentAmount = parseFloat(body.amount);
+      let remainingRepayment = repaymentAmount;
+
+      for (const loan of pendingLoans) {
+        if (remainingRepayment <= 0) break;
+
+        if (remainingRepayment >= loan.amount) {
+          remainingRepayment -= loan.amount;
+          await Transaction.findByIdAndDelete(loan._id);
+          console.log(`🗑️ Deleted loan: ${loan._id}`);
+        } else {
+          const newAmount = loan.amount - remainingRepayment;
+          await Transaction.findByIdAndUpdate(loan._id, {
+            amount: newAmount,
+            description: `${loan.description} ($${remainingRepayment} repaid, $${newAmount} remaining)`
+          });
+          console.log(`✏️ Updated loan: ${loan._id} from ${loan.amount} to ${newAmount}`);
+          remainingRepayment = 0;
+        }
+      }
+
+      const repaymentRecord = await Transaction.create({
+        amount: repaymentAmount,
+        type: 'liability',
+        category: 'Loan Repayment',
+        date: new Date(body.date),
+        description: body.description || '',
+        loanPersonName: body.loanPersonName || body.personName,
+        personName: body.loanPersonName || body.personName,
+      });
+
+      console.log('✅ Loan Repayment created:', repaymentRecord);
+      return NextResponse.json({ success: true, data: repaymentRecord }, { status: 201 });
+    }
+
+    // =============================================
     // LEND
+    // =============================================
     if (body.category === 'Lend') {
       const transaction = await Transaction.create({
         amount: parseFloat(body.amount),
@@ -89,7 +163,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: transaction }, { status: 201 });
     }
 
+    // =============================================
     // RETURN
+    // =============================================
     if (body.category === 'Return') {
       const pendingLends = await Transaction.find({
         category: 'Lend',
@@ -140,7 +216,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: returnRecord }, { status: 201 });
     }
 
+    // =============================================
     // SAVINGS
+    // =============================================
     if (body.category === 'Savings') {
       const transaction = await Transaction.create({
         amount: parseFloat(body.amount),
@@ -154,7 +232,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: transaction }, { status: 201 });
     }
 
+    // =============================================
     // SAVINGS WITHDRAW
+    // =============================================
     if (body.category === 'Savings Withdraw') {
       const savingsEntries = await Transaction.find({
         category: 'Savings',
@@ -205,42 +285,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: withdrawRecord }, { status: 201 });
     }
 
-    // ট্রান্সফারের জন্য অতিরিক্ত ভ্যালিডেশন
-    if (body.type === 'transfer') {
-      if (!body.fromAccount || !body.toAccount) {
-        return NextResponse.json(
-          { success: false, error: 'Transfer requires fromAccount and toAccount' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // লোন ক্যাটাগরির জন্য হেল্পার মেসেজ (অপশনাল)
-    if (body.category === 'Loan') {
-      console.log('💡 Loan transaction:', body.type === 'income' ? 'Loan received' : 'Loan payment');
-    }
-
-    // সেভিংস ক্যাটাগরির জন্য অটো টাইপ চেক
-    if (body.category === 'Savings' && body.type !== 'transfer') {
+    // =============================================
+    // NORMAL INCOME/EXPENSE
+    // =============================================
+    if (!body.type || (body.type !== 'income' && body.type !== 'expense')) {
       return NextResponse.json(
-        { success: false, error: 'Savings transactions must be of type "transfer"' },
+        { success: false, error: 'Valid type (income/expense) is required for normal transactions' },
         { status: 400 }
       );
     }
 
     const transactionData: any = {
-      amount: body.amount,
+      amount: parseFloat(body.amount),
       type: body.type,
       category: body.category,
       date: new Date(body.date),
       description: body.description,
     };
-
-    // ট্রান্সফারের অতিরিক্ত ফিল্ড
-    if (body.type === 'transfer') {
-      transactionData.fromAccount = body.fromAccount;
-      transactionData.toAccount = body.toAccount;
-    }
 
     const transaction = await Transaction.create(transactionData);
 
@@ -259,7 +320,7 @@ export async function POST(request: NextRequest) {
 }
 
 // =============================================
-// PUT METHOD (EDIT) - Adjustment সহ
+// PUT METHOD (EDIT)
 // =============================================
 export async function PUT(request: NextRequest) {
   try {
@@ -291,73 +352,6 @@ export async function PUT(request: NextRequest) {
 
     console.log('📜 Old Transaction:', oldTransaction);
 
-    // =============================================
-    // যদি RETURN ট্রানজেকশন এডিট করা হয়
-    // =============================================
-    if (oldTransaction.category === 'Return') {
-      console.log('🔄 Editing a RETURN transaction - Recalculating adjustment...');
-      
-      // পুরানো adjustment সরাও (আগের lend ফিরিয়ে আনো)
-      if (oldTransaction.personName) {
-        const oldLend = await Transaction.findOne({
-          category: 'Lend',
-          type: 'expense',
-          personName: oldTransaction.personName,
-        });
-        
-        if (oldLend) {
-          const newAmount = oldLend.amount + oldTransaction.amount;
-          await Transaction.findByIdAndUpdate(oldLend._id, {
-            amount: newAmount,
-            description: `${oldLend.description} (Restored from edit)`
-          });
-          console.log(`↩️ Restored lend: ${oldLend._id} to amount ${newAmount}`);
-        } else {
-          await Transaction.create({
-            amount: oldTransaction.amount,
-            type: 'expense',
-            category: 'Lend',
-            date: oldTransaction.date,
-            description: `Restored from edit: ${oldTransaction.description}`,
-            personName: oldTransaction.personName,
-          });
-          console.log(`🆕 Created new lend for ${oldTransaction.personName}`);
-        }
-      }
-      
-      // নতুন adjustment প্রয়োগ করো
-      if (body.category === 'Return' && body.personName) {
-        const pendingLends = await Transaction.find({
-          category: 'Lend',
-          type: 'expense',
-          personName: body.personName,
-        }).sort({ date: 1 });
-        
-        let returnAmount = parseFloat(body.amount);
-        let remainingReturn = returnAmount;
-        
-        console.log(`🔍 Found ${pendingLends.length} pending lends for ${body.personName}`);
-        
-        for (const lend of pendingLends) {
-          if (remainingReturn <= 0) break;
-          
-          if (remainingReturn >= lend.amount) {
-            remainingReturn -= lend.amount;
-            await Transaction.findByIdAndDelete(lend._id);
-            console.log(`🗑️ Deleted lend: ${lend._id}`);
-          } else {
-            const newAmount = lend.amount - remainingReturn;
-            await Transaction.findByIdAndUpdate(lend._id, {
-              amount: newAmount,
-              description: `${lend.description} ($${remainingReturn} returned, $${newAmount} remaining)`
-            });
-            console.log(`✏️ Updated lend: ${lend._id} from ${lend.amount} to ${newAmount}`);
-            remainingReturn = 0;
-          }
-        }
-      }
-    }
-
     // সাধারণ আপডেট ডাটা প্রস্তুত
     const updateData: any = {
       amount: parseFloat(body.amount),
@@ -373,6 +367,10 @@ export async function PUT(request: NextRequest) {
     
     if (body.accountName !== undefined) {
       updateData.accountName = body.accountName;
+    }
+    
+    if (body.loanPersonName !== undefined) {
+      updateData.loanPersonName = body.loanPersonName;
     }
 
     const updatedTransaction = await Transaction.findByIdAndUpdate(
