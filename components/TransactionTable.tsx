@@ -191,6 +191,7 @@ export function TransactionTable({
               <SelectItem value="Bills">💡 Bills</SelectItem>
               <SelectItem value="Health">🏥 Health</SelectItem>
               <SelectItem value="House Rent">🏠 House Rent</SelectItem>
+              <SelectItem value="Donate">🎁 Donate</SelectItem>  {/* 🆕 Donate যোগ করা হয়েছে */}
               <SelectItem value="Other">📝 Other</SelectItem>
               
               {/* Special Categories */}

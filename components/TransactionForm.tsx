@@ -29,10 +29,11 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '8', name: 'Bills', icon: '💡', type: 'expense', color: '#607D8B' },
   { id: '9', name: 'Health', icon: '🏥', type: 'expense', color: '#E91E63' },
   { id: '10', name: 'House Rent', icon: '🏠', type: 'expense', color: '#8D6E63' },
-  { id: '11', name: 'Savings', icon: '🏦', type: 'transfer', color: '#2196F3' },
-  { id: '12', name: 'Loan Taken', icon: '🏦', type: 'liability', color: '#FF6B00' },
-  { id: '13', name: 'Loan Repayment', icon: '💳', type: 'liability', color: '#00ACC1' },
-  { id: '14', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
+  { id: '11', name: 'Donate', icon: '🎁', type: 'expense', color: '#E91E63' }, // 🆕 Donate যোগ করা হয়েছে
+  { id: '12', name: 'Savings', icon: '🏦', type: 'transfer', color: '#2196F3' },
+  { id: '13', name: 'Loan Taken', icon: '🏦', type: 'liability', color: '#FF6B00' },
+  { id: '14', name: 'Loan Repayment', icon: '💳', type: 'liability', color: '#00ACC1' },
+  { id: '15', name: 'Other', icon: '📝', type: 'expense', color: '#9E9E9E' },
 ]
 
 export function TransactionForm({
