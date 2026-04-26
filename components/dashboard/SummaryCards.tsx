@@ -52,8 +52,8 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
     .filter(t => t.category === 'Savings')
     .reduce((sum, t) => sum + t.amount, 0))
 
-  // 🎯 Total Asset = Balance + Lend + Savings - (2 × Loan Taken)
-  const totalAsset = Math.floor(balance + totalLend + totalSavings - (2 * loanTaken))
+  // 🎯 Total Asset = Balance + Lend + Savings - Loan Taken
+  const totalAsset = Math.floor(balance + totalLend + totalSavings - loanTaken)
 
   // This Month
   const currentMonth = new Date().toISOString().slice(0, 7)
@@ -114,7 +114,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
             {formatInteger(totalAsset)}
           </p>
           <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
-            Balance + Lend + Savings - 2×Loan
+            Balance + Lend + Savings - Loan
           </p>
         </Card>
       </div>
