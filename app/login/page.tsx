@@ -17,7 +17,7 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
 
-  // হার্ডকোডেড ইউজার
+  // Hardcoded user
   const HARDCODED_USER = {
     email: 'wadudbadsha3@gmail.com',
     password: 'admin123'
@@ -28,43 +28,42 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
-    // চেক করুন ইউজার সঠিক কিনা
+    // Check if user is correct
     if (formData.email === HARDCODED_USER.email && formData.password === HARDCODED_USER.password) {
-      // localStorage এ সেভ করা
+      // Save to localStorage
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('userEmail', formData.email)
-      if (formData.rememberMe) {
-        localStorage.setItem('userEmail', formData.email)
-      }
       
-      // কুকি সেট করুন
-      document.cookie = "isLoggedIn=true; path=/"
+      // Set cookie with expiry
+      document.cookie = "isLoggedIn=true; path=/; max-age=86400" // 24 hours
       
-      // ড্যাশবোর্ডে রিডাইরেক্ট
-      router.push('/')
+      // Small delay and use window.location
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 100)
+      
     } else {
-      // শুধু সাধারণ error message দেখান - সঠিক ক্রেডেনশিয়াল দেখাবেন না
       setError('Invalid email or password. Please try again.')
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         
-        {/* লোগো ও হেডার */}
+        {/* Logo & Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">💰</div>
           <h1 className="text-3xl font-bold text-foreground">Money Tracker</h1>
           <p className="text-muted-foreground mt-2">Track your finances smartly</p>
         </div>
 
-        {/* লগইন কার্ড */}
+        {/* Login Card */}
         <Card className="p-6 sm:p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             
-            {/* Error Message - শুধু সাধারণ মেসেজ দেখাবে */}
+            {/* Error Message */}
             {error && (
               <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
                 {error}
@@ -156,11 +155,12 @@ export default function LoginPage() {
           </form>
         </Card>
 
-        {/* ডেমো ক্রেডেনশিয়াল - শুধু টেস্টিং এর জন্য */}
-        <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-          <p className="text-xs text-center text-muted-foreground">
-            <strong>Demo Access:</strong><br />
-            Use the credentials provided by your administrator
+        {/* Demo Credentials */}
+        <div className="mt-6 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+          <p className="text-xs text-center text-foreground">
+            <strong>📝 Demo Access:</strong><br />
+            Email: wadudbadsha3@gmail.com<br />
+            Password: admin123
           </p>
         </div>
       </div>
