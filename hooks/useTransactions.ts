@@ -1,37 +1,78 @@
-// hooks/useTransactions.ts - সম্পূর্ণ ফিক্সড ভার্সন
+// hooks/useTransactions.ts - সিম্পল ফিক্সড ভার্সন
 'use client'
 
 import useSWR from 'swr'
 import { Transaction, ApiResponse, CreateTransactionInput } from '@/lib/types'
+import { useEffect, useState } from 'react'
 
-const fetcher = (url: string) => 
-  fetch(url).then(res => {
-    if (!res.ok) throw new Error('Failed to fetch transactions')
-    return res.json()
-  })
+// ✅ টাইমআউট সহ ফেচার
+const fetcher = async (url: string) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 সেকেন্ড
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
+    if (!response.ok) throw new Error('Failed to fetch')
+    const data = await response.json()
+    
+    // ✅ API সফল হলে ব্যাকআপ সেভ করুন
+    if (data?.data) {
+      localStorage.setItem('transactions_backup', JSON.stringify(data.data))
+    }
+    
+    return data
+  } catch (err) {
+    clearTimeout(timeoutId)
+    throw err
+  }
+}
 
 export function useTransactions() {
+  const [backupData, setBackupData] = useState<Transaction[]>([])
+  
+  // ✅ লোকাল ব্যাকআপ লোড করুন
+  useEffect(() => {
+    const backup = localStorage.getItem('transactions_backup')
+    if (backup) {
+      try {
+        setBackupData(JSON.parse(backup))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }, [])
+
   const { data, error, isLoading, mutate } = useSWR<ApiResponse<Transaction[]>>(
     '/api/transactions', 
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnReconnect: false,
+      revalidateOnReconnect: true,
       revalidateIfStale: false,
       dedupingInterval: 10000,
       refreshInterval: 0,
       keepPreviousData: true,
+      errorRetryCount: 2, // ২ বার রিট্রাই
+      errorRetryInterval: 3000, // ৩ সেকেন্ড পর
     }
   )
 
+  // ✅ API ডাটা থাকলে সেটা না থাকলে ব্যাকআপ
+  const transactions = (data?.data && data.data.length > 0) ? data.data : backupData
+  
+  // ✅ ব্যাকআপ থাকলে লোডিং দেখাবেন না
+  const showLoading = isLoading && backupData.length === 0
+
   return {
-    transactions: data?.data || [],
-    error,
-    isLoading: isLoading || !data,
+    transactions,
+    error: error && backupData.length === 0 ? error : null,
+    isLoading: showLoading,
     mutate,
   }
 }
 
+// ❌ বাকি সব ফাংশন ঠিক আগের মতো থাকবে (কোনো পরিবর্তন দরকার নেই)
 export function useTransaction(id: string) {
   const { data, error, isLoading } = useSWR<ApiResponse<Transaction>>(
     id ? `/api/transactions/${id}` : null,
@@ -69,17 +110,23 @@ export async function createTransaction(data: {
     throw new Error(errorData.error || 'Failed to create transaction')
   }
   
-  return response.json()
-}
-
-// ✅ ফিক্সড - সঠিক URL ফরম্যাট
-export async function updateTransaction(id: string, data: Partial<Transaction>) {
-  if (!id) {
-    throw new Error('Transaction ID is required for update')
+  const result = await response.json()
+  
+  // ✅ ব্যাকআপ আপডেট করুন
+  if (result?.data) {
+    const backup = localStorage.getItem('transactions_backup')
+    if (backup) {
+      const transactions = JSON.parse(backup)
+      transactions.push(result.data)
+      localStorage.setItem('transactions_backup', JSON.stringify(transactions))
+    }
   }
   
-  console.log('✏️ updateTransaction called with id:', id);
-  console.log('📦 updateTransaction data:', data);
+  return result
+}
+
+export async function updateTransaction(id: string, data: Partial<Transaction>) {
+  if (!id) throw new Error('Transaction ID is required')
   
   const response = await fetch(`/api/transactions?id=${id}`, {
     method: 'PUT',
@@ -92,16 +139,25 @@ export async function updateTransaction(id: string, data: Partial<Transaction>) 
     throw new Error(errorData.error || 'Failed to update transaction')
   }
   
-  return response.json()
-}
-
-// ✅ ফিক্সড - সঠিক URL ফরম্যাট
-export async function deleteTransaction(id: string) {
-  if (!id) {
-    throw new Error('Transaction ID is required for delete')
+  const result = await response.json()
+  
+  // ✅ ব্যাকআপ আপডেট করুন
+  if (result?.data) {
+    const backup = localStorage.getItem('transactions_backup')
+    if (backup) {
+      let transactions = JSON.parse(backup)
+      transactions = transactions.map((t: Transaction) => 
+        t.id === id ? { ...t, ...data } : t
+      )
+      localStorage.setItem('transactions_backup', JSON.stringify(transactions))
+    }
   }
   
-  console.log('🗑️ deleteTransaction called with id:', id);
+  return result
+}
+
+export async function deleteTransaction(id: string) {
+  if (!id) throw new Error('Transaction ID is required')
   
   const response = await fetch(`/api/transactions?id=${id}`, {
     method: 'DELETE',
@@ -112,38 +168,46 @@ export async function deleteTransaction(id: string) {
     throw new Error(errorData.error || 'Failed to delete transaction')
   }
   
-  return response.json()
+  const result = await response.json()
+  
+  // ✅ ব্যাকআপ আপডেট করুন
+  const backup = localStorage.getItem('transactions_backup')
+  if (backup) {
+    let transactions = JSON.parse(backup)
+    transactions = transactions.filter((t: Transaction) => t.id !== id)
+    localStorage.setItem('transactions_backup', JSON.stringify(transactions))
+  }
+  
+  return result
 }
 
-// বাকি হেল্পার ফাংশনগুলো
+// বাকি হেল্পার ফাংশনগুলো ঠিক আগের মতো (কোনো পরিবর্তন নাই)
 export function useIncomeTransactions() {
   const { transactions, ...rest } = useTransactions()
-  const incomeTransactions = transactions.filter(t => t.type === 'income')
-  return { transactions: incomeTransactions, ...rest }
+  return { transactions: transactions.filter(t => t.type === 'income'), ...rest }
 }
 
 export function useExpenseTransactions() {
   const { transactions, ...rest } = useTransactions()
-  const expenseTransactions = transactions.filter(t => t.type === 'expense')
-  return { transactions: expenseTransactions, ...rest }
+  return { transactions: transactions.filter(t => t.type === 'expense'), ...rest }
 }
 
 export function useTransferTransactions() {
   const { transactions, ...rest } = useTransactions()
-  const transferTransactions = transactions.filter(t => t.type === 'transfer')
-  return { transactions: transferTransactions, ...rest }
+  return { transactions: transactions.filter(t => t.type === 'transfer'), ...rest }
 }
 
 export function useTransactionsByCategory(categoryName: string) {
   const { transactions, ...rest } = useTransactions()
-  const filteredTransactions = transactions.filter(t => t.category === categoryName)
-  return { transactions: filteredTransactions, ...rest }
+  return { transactions: transactions.filter(t => t.category === categoryName), ...rest }
 }
 
 export function useTransactionsByDateRange(startDate: string, endDate: string) {
   const { transactions, ...rest } = useTransactions()
-  const filteredTransactions = transactions.filter(t => t.date >= startDate && t.date <= endDate)
-  return { transactions: filteredTransactions, ...rest }
+  return { 
+    transactions: transactions.filter(t => t.date >= startDate && t.date <= endDate), 
+    ...rest 
+  }
 }
 
 export async function getAssetSummary() {

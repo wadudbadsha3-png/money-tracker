@@ -18,18 +18,24 @@ interface IncomeExpenseChartProps {
 }
 
 export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
-  // Group by month and calculate cumulative balance
-  const monthlyData: Record<string, { income: number; expenses: number }> = {}
+  // Group by month
+  const monthlyData: Record<string, { income: number; expenses: number; loan: number }> = {}
 
   transactions.forEach(tx => {
     const key = getMonthYearKey(tx.date)
     if (!monthlyData[key]) {
-      monthlyData[key] = { income: 0, expenses: 0 }
+      monthlyData[key] = { income: 0, expenses: 0, loan: 0 }
     }
+    
     if (tx.type === 'income') {
       monthlyData[key].income += tx.amount
-    } else {
+    } 
+    else if (tx.type === 'expense' && tx.category !== 'Return' && tx.category !== 'Savings Withdraw') {
       monthlyData[key].expenses += tx.amount
+    }
+    else if (tx.category === 'Loan Taken') {
+      // লোন নিলে সেটা ব্যালেন্সে যোগ হবে
+      monthlyData[key].loan += tx.amount
     }
   })
 
@@ -40,7 +46,8 @@ export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
       month: month.split('-').reverse().join('/'),
       Income: amounts.income,
       Expenses: amounts.expenses,
-      Balance: amounts.income - amounts.expenses,
+      // ✅ সঠিক ব্যালেন্স = আয় - খরচ + লোন
+      Balance: amounts.income - amounts.expenses + amounts.loan,
     }))
 
   return (

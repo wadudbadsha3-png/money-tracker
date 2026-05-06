@@ -26,9 +26,12 @@ export function MonthlyChart({ transactions }: MonthlyChartProps) {
     if (!monthlyData[key]) {
       monthlyData[key] = { income: 0, expenses: 0 }
     }
+    
     if (tx.type === 'income') {
       monthlyData[key].income += tx.amount
-    } else {
+    } 
+    // ✅ Expenses থেকে Return এবং Savings Withdraw বাদ
+    else if (tx.type === 'expense' && tx.category !== 'Return' && tx.category !== 'Savings Withdraw') {
       monthlyData[key].expenses += tx.amount
     }
   })
