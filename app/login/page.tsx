@@ -155,14 +155,6 @@ export default function LoginPage() {
           </form>
         </Card>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-          <p className="text-xs text-center text-foreground">
-            <strong>📝 Demo Access:</strong><br />
-            Email: wadudbadsha3@gmail.com<br />
-            Password: admin123
-          </p>
-        </div>
       </div>
     </div>
   )
