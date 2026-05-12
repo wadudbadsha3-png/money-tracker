@@ -138,7 +138,7 @@ export function TransactionTable({
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 md:p-6">
       {/* Filters */}
       <div className="space-y-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -168,7 +168,7 @@ export function TransactionTable({
             </SelectContent>
           </Select>
           
-          {/* Category Filter - সব ক্যাটাগরি সহ */}
+          {/* Category Filter */}
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="All Categories" />
@@ -191,7 +191,7 @@ export function TransactionTable({
               <SelectItem value="Bills">💡 Bills</SelectItem>
               <SelectItem value="Health">🏥 Health</SelectItem>
               <SelectItem value="House Rent">🏠 House Rent</SelectItem>
-              <SelectItem value="Donate">🎁 Donate</SelectItem>  {/* 🆕 Donate যোগ করা হয়েছে */}
+              <SelectItem value="Donate">🎁 Donate</SelectItem>
               <SelectItem value="Other">📝 Other</SelectItem>
               
               {/* Special Categories */}
@@ -220,8 +220,68 @@ export function TransactionTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile View - Card Layout */}
+      <div className="md:hidden space-y-4">
+        {filteredAndSorted.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            No transactions found
+          </div>
+        ) : (
+          filteredAndSorted.map((transaction) => {
+            const personBank = getPersonBankDisplay(transaction)
+            return (
+              <div key={transaction.id || transaction._id} className="border rounded-lg p-4 space-y-3 bg-card">
+                {/* Header: Date and Actions */}
+                <div className="flex justify-between items-start">
+                  <div className="text-sm text-muted-foreground">
+                    {formatDate(transaction.date)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onEdit(transaction)}>
+                      Edit
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(transaction.id || transaction._id)}>
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="font-semibold text-base">
+                  {transaction.description}
+                </div>
+
+                {/* Category and Amount in a row */}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm">
+                    {getCategoryIcon(transaction.category)} {transaction.category}
+                  </div>
+                  <div className={`text-lg font-bold ${
+                    transaction.type === 'income' || transaction.category === 'Return' 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {transaction.type === 'income' || transaction.category === 'Return' ? '+' : '-'}
+                    {formatCurrency(transaction.amount)}
+                  </div>
+                </div>
+
+                {/* Person/Bank Info */}
+                {personBank && (
+                  <div className={`flex items-center gap-1 text-sm ${personBank.color}`}>
+                    <span>{personBank.icon}</span>
+                    <span className="text-muted-foreground">{personBank.label}:</span>
+                    <span className="font-medium">{personBank.name}</span>
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Desktop View - Table Layout */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b">
@@ -231,7 +291,7 @@ export function TransactionTable({
               <th className="text-left py-3 px-4 font-semibold text-sm">Person / Bank</th>
               <th className="text-right py-3 px-4 font-semibold text-sm">Amount</th>
               <th className="text-right py-3 px-4 font-semibold text-sm">Actions</th>
-             </tr>
+            </tr>
           </thead>
           <tbody>
             {filteredAndSorted.length === 0 ? (
@@ -287,11 +347,11 @@ export function TransactionTable({
 
       {/* Summary */}
       {filteredAndSorted.length > 0 && (
-        <div className="flex justify-between items-center mt-6 pt-4 border-t text-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mt-6 pt-4 border-t text-sm">
           <p className="text-muted-foreground">
             Showing {filteredAndSorted.length} of {transactions.length} transaction(s)
           </p>
-          <div className="space-x-6">
+          <div className="flex flex-wrap gap-4">
             <span>
               Total Income: <span className="font-semibold text-green-600">
                 {formatCurrency(

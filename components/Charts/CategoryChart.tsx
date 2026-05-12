@@ -16,6 +16,9 @@ const DEFAULT_COLORS = [
   '#F8C471', '#A569BD', '#5DADE2', '#58D68F', '#F1948A'
 ]
 
+// Actual expense categories only
+const actualExpenseCategories = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'House Rent', 'Donate', 'Other']
+
 interface CategoryChartProps {
   transactions: Transaction[]
   categories: Category[]
@@ -26,16 +29,8 @@ export function CategoryChart({ transactions, categories }: CategoryChartProps) 
 
   transactions
     .filter(t => {
-      // Expense দেখাবে (Return, Savings Withdraw, Loan Repayment বাদ)
-      if (t.type === 'expense') {
-        const exclude = ['Return', 'Savings Withdraw', 'Loan Repayment']
-        return !exclude.includes(t.category)
-      }
-      // Loan Taken দেখাবে
-      if (t.type === 'liability' && t.category === 'Loan Taken') {
-        return true
-      }
-      return false
+      // Only include actual expense categories
+      return t.type === 'expense' && actualExpenseCategories.includes(t.category)
     })
     .forEach(tx => {
       categoryData[tx.category] = (categoryData[tx.category] || 0) + tx.amount
@@ -54,7 +49,7 @@ export function CategoryChart({ transactions, categories }: CategoryChartProps) 
   if (data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        No expense or loan data available
+        No expense data available
       </div>
     )
   }

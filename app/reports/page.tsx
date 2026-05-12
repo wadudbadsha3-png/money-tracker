@@ -1,4 +1,4 @@
-// app/reports/page.tsx - শুধু Category Summary অংশ আপডেট করা হয়েছে
+// app/reports/page.tsx - Updated with actual expense filtering
 
 'use client'
 
@@ -10,6 +10,9 @@ import { IncomeExpenseChart } from '@/components/Charts/IncomeExpenseChart'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { formatCurrency, getMonthYearKey } from '@/lib/utils'
+
+// Actual expense categories only
+const actualExpenseCategories = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'House Rent', 'Donate', 'Other']
 
 export default function ReportsPage() {
   const { transactions, isLoading: txLoading } = useTransactions()
@@ -31,7 +34,7 @@ export default function ReportsPage() {
     .reduce((sum, t) => sum + t.amount, 0)
     
   const thisMonthExpenses = thisMonthTransactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && actualExpenseCategories.includes(t.category))
     .reduce((sum, t) => sum + t.amount, 0)
 
   // অল-টাইম স্ট্যাটস
@@ -40,7 +43,7 @@ export default function ReportsPage() {
     .reduce((sum, t) => sum + t.amount, 0)
     
   const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && actualExpenseCategories.includes(t.category))
     .reduce((sum, t) => sum + t.amount, 0)
     
   // ব্যালেন্স ক্যালকুলেশন
@@ -74,6 +77,29 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+          <Card className="p-3 sm:p-4">
+            <h3 className="text-xs sm:text-sm text-muted-foreground">This Month Income</h3>
+            <p className="text-lg sm:text-2xl font-bold text-green-600">{formatCurrency(thisMonthIncome)}</p>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <h3 className="text-xs sm:text-sm text-muted-foreground">This Month Expenses</h3>
+            <p className="text-lg sm:text-2xl font-bold text-red-600">{formatCurrency(thisMonthExpenses)}</p>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <h3 className="text-xs sm:text-sm text-muted-foreground">This Month Balance</h3>
+            <p className={`text-lg sm:text-2xl font-bold ${thisMonthBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(thisMonthBalance)}
+            </p>
+          </Card>
+          <Card className="p-3 sm:p-4">
+            <h3 className="text-xs sm:text-sm text-muted-foreground">Total Balance</h3>
+            <p className={`text-lg sm:text-2xl font-bold ${totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(totalBalance)}
+            </p>
+          </Card>
+        </div>
         
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -99,7 +125,7 @@ export default function ReportsPage() {
             <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
               Spending by Category
             </h2>
-            {transactions.filter(t => t.type === 'expense').length === 0 ? (
+            {transactions.filter(t => t.type === 'expense' && actualExpenseCategories.includes(t.category)).length === 0 ? (
               <p className="text-center text-muted-foreground py-12">
                 No expense data available
               </p>
@@ -115,16 +141,16 @@ export default function ReportsPage() {
             </h2>
             <div className="space-y-2 sm:space-y-3 max-h-80 overflow-y-auto">
               {(() => {
-                // ট্রানজেকশন থেকে expense ক্যাটাগরি এবং amount বের করি
+                // শুধু actual expense ক্যাটাগরি থেকে ট্রানজেকশন নিচ্ছি
                 const expenseByCategory = transactions
-                  .filter(t => t.type === 'expense')
+                  .filter(t => t.type === 'expense' && actualExpenseCategories.includes(t.category))
                   .reduce((acc, t) => {
                     acc[t.category] = (acc[t.category] || 0) + t.amount
                     return acc
                   }, {} as Record<string, number>)
                 
                 const categoryEntries = Object.entries(expenseByCategory)
-                
+                  
                 if (categoryEntries.length === 0) {
                   return (
                     <p className="text-center text-muted-foreground py-4">
@@ -133,21 +159,23 @@ export default function ReportsPage() {
                   )
                 }
                 
-                return categoryEntries.map(([categoryName, amount]) => {
-                  // ক্যাটাগরির আইকন খুঁজে বের করি
-                  const category = categories.find(c => c.name === categoryName)
-                  return (
-                    <div key={categoryName} className="flex items-center justify-between pb-2 border-b last:border-0">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-sm sm:text-base">{category?.icon || '📝'}</span>
-                        <span className="text-xs sm:text-sm font-medium">{categoryName}</span>
+                return categoryEntries
+                  .sort((a, b) => b[1] - a[1]) // Sort by highest amount first
+                  .map(([categoryName, amount]) => {
+                    // ক্যাটাগরির আইকন খুঁজে বের করি
+                    const category = categories.find(c => c.name === categoryName)
+                    return (
+                      <div key={categoryName} className="flex items-center justify-between pb-2 border-b last:border-0">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <span className="text-sm sm:text-base">{category?.icon || '📝'}</span>
+                          <span className="text-xs sm:text-sm font-medium">{categoryName}</span>
+                        </div>
+                        <span className="text-xs sm:text-sm font-semibold text-foreground">
+                          {formatCurrency(amount)}
+                        </span>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-foreground">
-                        {formatCurrency(amount)}
-                      </span>
-                    </div>
-                  )
-                })
+                    )
+                  })
               })()}
             </div>
           </Card>

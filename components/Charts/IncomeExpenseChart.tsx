@@ -13,6 +13,9 @@ import {
 import { Transaction } from '@/lib/types'
 import { getMonthYearKey } from '@/lib/utils'
 
+// Actual expense categories only
+const actualExpenseCategories = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Bills', 'Health', 'House Rent', 'Donate', 'Other']
+
 interface IncomeExpenseChartProps {
   transactions: Transaction[]
 }
@@ -30,7 +33,8 @@ export function IncomeExpenseChart({ transactions }: IncomeExpenseChartProps) {
     if (tx.type === 'income') {
       monthlyData[key].income += tx.amount
     } 
-    else if (tx.type === 'expense' && tx.category !== 'Return' && tx.category !== 'Savings Withdraw') {
+    else if (tx.type === 'expense' && actualExpenseCategories.includes(tx.category)) {
+      // Only include actual expense categories
       monthlyData[key].expenses += tx.amount
     }
     else if (tx.category === 'Loan Taken') {
