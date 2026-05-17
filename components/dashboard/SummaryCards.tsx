@@ -85,7 +85,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
       {/* First Row - 3 Cards */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200 dark:border-green-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[16]">
             <p className="text-xs text-muted-foreground font-medium">Total Income</p>
             <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
           </div>
@@ -96,7 +96,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         </Card>
 
         <Card className="p-3 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/50 border-red-200 dark:border-red-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[16]">
             <p className="text-xs text-muted-foreground font-medium">Total Expenses</p>
             <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
           </div>
@@ -107,7 +107,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         </Card>
 
         <Card className="p-3 bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-950/50 dark:to-gray-900/50 border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-0">
             <p className="text-xs text-muted-foreground font-medium">Total Actual Expense</p>
             <Receipt className="w-4 h-4 text-slate-600 dark:text-slate-400" />
           </div>
@@ -123,7 +123,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
       {/* Second Row - 3 Cards */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[23]">
             <p className="text-xs text-muted-foreground font-medium">Balance</p>
             <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
@@ -149,7 +149,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         </Card>
 
         <Card className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-900/50 border-orange-200 dark:border-orange-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[16]">
             <p className="text-xs text-muted-foreground font-medium">Total Lend</p>
             <HandCoins className="w-4 h-4 text-orange-600 dark:text-orange-400" />
           </div>
@@ -166,7 +166,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-3 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-900/50 border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground font-medium">Total Savings</p>
+            <p className="text-xs text-muted-foreground font-medium">Total Savings   </p>
             <PiggyBank className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <p className="text-sm md:text-xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -194,7 +194,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
       {/* Fourth Row - 3 Cards */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[16]">
             <p className="text-xs text-green-700 dark:text-green-300 font-medium">
               This Month Income
             </p>
@@ -206,7 +206,7 @@ export function SummaryCards({ transactions }: SummaryCardsProps) {
         </Card>
 
         <Card className="p-3 bg-gradient-to-r from-red-50/50 to-rose-50/50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-[16]">
             <p className="text-xs text-red-700 dark:text-red-300 font-medium">
               This Month Expenses
             </p>
